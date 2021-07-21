@@ -52,16 +52,6 @@ mirror_augment = {
 import models.classifiers as CLS
 import models.autoencoders as AES
 
-"""
-    Each dataset has a list of compatible neural netwok architectures.
-    Your life would be simpler if you keep the same family as the same index within each dataset.
-    For instance, VGGs are all 0 and Resnets are all 1.
-"""
-dataset_reference_classifiers = {
-    'MNIST':                  [CLS.MNIST_VGG,         CLS.MNIST_Resnet],
-    'FashionMNIST':           [CLS.MNIST_VGG,         CLS.MNIST_Resnet]
-}
-
 class ModelFactory(object):
     def __init__(self, parent_class, **kwargs):
         self.parent_class = parent_class
@@ -69,10 +59,40 @@ class ModelFactory(object):
     def __call__(self):
         return self.parent_class(**self.kwargs)
 
+
+"""
+    Each dataset has a list of compatible neural netwok architectures.
+    Your life would be simpler if you keep the same family as the same index within each dataset.
+    For instance, VGGs are all 0 and Resnets are all 1.
+"""
+
+dataset_reference_classifiers = {
+    'MNIST':                  [ModelFactory(CLS.Scaled_VGG, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(1,28,28), classes=10, epochs=60)],
+    'FashionMNIST':           [ModelFactory(CLS.Scaled_VGG, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(1,28,28), classes=10, epochs=60)],
+    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(3,32,32), classes=10, epochs=120)],
+    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG, scale=(3,32,32), classes=100, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(3,32,32), classes=100, epochs=120)],
+    'STL10':                  [ModelFactory(CLS.Scaled_VGG, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(3, 96, 96), classes=10, epochs=120)],
+    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(3, 64, 64), classes=200, epochs=120)],
+}
+
 dataset_reference_autoencoders = {
     'MNIST':              [ModelFactory(AES.Generic_AE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
-    'FashionMNIST':       [ModelFactory(AES.Generic_AE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)]
+    'FashionMNIST':       [ModelFactory(AES.Generic_AE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
+    'CIFAR10':            [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+    'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+    'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
+    'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
 }
+
+dataset_reference_vaes = {
+    'MNIST':              [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
+    'FashionMNIST':       [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
+    'CIFAR10':            [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+    'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+    'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
+    'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+}
+
 
 """
     This is where we keep a reference to all the methods.
@@ -80,18 +100,29 @@ dataset_reference_autoencoders = {
 
 import methods.base_threshold as BT
 import methods.logistic_threshold as KL
-#import methods.binary_classifier as BinClass
+import methods.binary_classifier as BinClass
+import methods.nearest_neighbor as KNN
 import methods.score_svm as SSVM
 import methods.mcdropout as MCD
 import methods.deep_ensemble as DE
+import methods.odin as ODIN
+import methods.reconstruction_error as RE
+import methods.openmax as OM
 
 all_methods = {
     'prob_threshold':   BT.ProbabilityThreshold,
     'score_svm':        SSVM.ScoreSVM,
     'logistic_svm':     KL.LogisticSVM,
     'mcdropout':        MCD.MCDropout,
-#    'binclass':         BinClass.BinaryClassifier,
+    'knn':              KNN.KNNSVM,
+    'bceaeknn':         KNN.BCEKNNSVM,
+    'mseaeknn':         KNN.MSEKNNSVM,
+    'vaeaeknn':         KNN.VAEKNNSVM,
+    'binclass':         BinClass.BinaryClassifier,
     'deep_ensemble':    DE.DeepEnsemble,
+    'odin':             ODIN.ODIN,
+    'reconst_thresh':   RE.ReconstructionThreshold,
+    'openmax':          OM.OpenMax,
 }
 
 ##################################################################
@@ -116,6 +147,11 @@ def get_ref_classifier(dataset):
 def get_ref_autoencoder(dataset):
     if dataset in dataset_reference_autoencoders:
         return dataset_reference_autoencoders[dataset]
+    raise NotImplementedError()
+
+def get_ref_vae(dataset):
+    if dataset in dataset_reference_vaes:
+        return dataset_reference_vaes[dataset]
     raise NotImplementedError()
 
 def get_method(name, args):
