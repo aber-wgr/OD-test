@@ -13,12 +13,13 @@ import datasets.CIFAR as CIFAR
 import datasets.noise as noise
 import datasets.STL as STL
 import datasets.TinyImagenet as TI
+import datasets.OMIDB as OMIDB
 
 all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         CIFAR.CIFAR10, CIFAR.CIFAR100,
                         STL.STL10, TI.TinyImagenet,
                         noise.UniformNoise, noise.NormalNoise,
-                        STL.STL10d32, TI.TinyImagenetd32]
+                        STL.STL10d32, TI.TinyImagenetd32, OMIDB.OMIDB]
 
 """
     Not all the datasets can be used as a Dv, Dt (aka D2) for each dataset.
@@ -35,6 +36,7 @@ d2_compatiblity = {
     'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'],
     'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32'],
     'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32'],
+    'OMIDB'                                 : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32']
     # STL10 is not compatible with CIFAR10 because of the 9-overlapping classes.
     # Erring on the side of caution.
 }
@@ -73,6 +75,7 @@ dataset_reference_classifiers = {
     'CIFAR100':               [ModelFactory(CLS.Scaled_VGG, scale=(3,32,32), classes=100, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(3,32,32), classes=100, epochs=120)],
     'STL10':                  [ModelFactory(CLS.Scaled_VGG, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(3, 96, 96), classes=10, epochs=120)],
     'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(3, 64, 64), classes=200, epochs=120)],
+    'OMIDB':                  [ModelFactory(CLS.Scaled_VGG, scale=(1, 256, 256), classes=5, epochs=200), ModelFactory(CLS.Scaled_Resnet, scale=(1, 256, 256), classes=5, epochs=200)],
 }
 
 dataset_reference_autoencoders = {
@@ -82,6 +85,7 @@ dataset_reference_autoencoders = {
     'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+    'OMIDB':              [ModelFactory(AES.Generic_AE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_vaes = {
@@ -91,6 +95,7 @@ dataset_reference_vaes = {
     'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+    'OMIDB':              [ModelFactory(AES.Generic_VAE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
 }
 
 
