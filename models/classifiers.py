@@ -63,11 +63,12 @@ class Scaled_VGG(nn.Module):
             nn.Linear(classifier_width, classifier_width), nn.ReLU(True), nn.Dropout(),
             nn.Linear(classifier_width, classes),
         )
+
+        torchinfo.summary(self.model, input_size=(32, self.scale[0], self.scale[1], self.scale[2]))
+
         if(init_weights):
             self.model._initialize_weights()
-
-        torchinfo.summary(self.model, input_size=(32, self.scale[0], self.scale[1], self.scale[2]), verbose=2)
-
+        
         self.epochs = epochs
 
     def forward(self, x, softmax=True):
