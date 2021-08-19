@@ -32,7 +32,7 @@ class OMIDB(AbstractDomainInterface):
         
         train_targets = [base_dataset.targets[i] for i in train_indices_np]
 
-        self.D1_train_ind_np, self.D2_valid_ind_np = train_test_split(train_indices_np, test_size=0.1, stratify=train_targets)
+        D1_train_ind_np, D2_valid_ind_np = train_test_split(train_indices_np, test_size=0.1, stratify=train_targets)
 
         self.D2_valid_ind = torch.from_numpy(train_indices_np) #looks weird but we don't actually train on it!
         self.D2_test_int = torch.from_numpy(test_indices_np)
