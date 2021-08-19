@@ -28,15 +28,18 @@ class OMIDB(AbstractDomainInterface):
         base_dataset = datasets.ImageFolder(root_path,transform=im_transformer)
 
         indices = np.arange(len(base_dataset))
-        train_indices, test_indices = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
+        train_indices_np, test_indices_np = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
         
         train_targets = [base_dataset.targets[i] for i in train_indices]
 
-        self.D2_valid_ind = train_indices #looks weird but we don't actually train on it!
-        self.D2_test_int = test_indices
+        self.D1_train_ind_np, self.D2_valid_ind_np = train_test_split(train_indices_np, test_size=0.1, stratify=train_targets)
 
-        self.D1_test_ind = test_indices
-        self.D1_train_ind, self.D2_valid_ind = train_test_split(train_indices, test_size=0.1, stratify=train_targets)
+        self.D2_valid_ind = torch.from_numpy(train_indices_np) #looks weird but we don't actually train on it!
+        self.D2_test_int = torch.from_numpy(test_indices_np)
+
+        self.D1_test_ind = torch.from_numpy(test_indices_np)
+        self.D1_train_ind = torch.from_numpy(D1_train_ind_np)
+        self.D2_valid_ind = torch.from_numpy(D2_valid_ind_np)
 
         self.base_dataset = base_dataset
 
