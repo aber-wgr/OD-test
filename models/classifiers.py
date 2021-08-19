@@ -64,7 +64,7 @@ class Scaled_VGG(nn.Module):
             nn.Linear(classifier_width, classes),
         )
 
-        torchinfo.summary(self.model, input_size=(32, self.scale[0], self.scale[1], self.scale[2]))
+        torchinfo.summary(self.model, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(32, self.scale[0], self.scale[1], self.scale[2]))
 
         if(init_weights):
             self.model._initialize_weights()
