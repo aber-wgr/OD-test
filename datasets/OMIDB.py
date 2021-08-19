@@ -30,7 +30,7 @@ class OMIDB(AbstractDomainInterface):
         indices = np.arange(len(base_dataset))
         train_indices_np, test_indices_np = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
         
-        train_targets = [base_dataset.targets[i] for i in train_indices]
+        train_targets = [base_dataset.targets[i] for i in train_indices_np]
 
         self.D1_train_ind_np, self.D2_valid_ind_np = train_test_split(train_indices_np, test_size=0.1, stratify=train_targets)
 
