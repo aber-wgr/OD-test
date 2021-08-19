@@ -55,7 +55,7 @@ class Scaled_VGG(nn.Module):
 
         channels = scale[0]
         self.model = VGG.VGG(self.make_layers(self.cfg, channels, batch_norm=True), num_classes=classes)
-        print(torchinfo.summary(self.model, input_size=(32, self.scale[0], self.scale[1], self.scale[2]), verbose=0))
+        torchinfo.summary(self.model, input_size=(32, self.scale[0], self.scale[1], self.scale[2]), verbose=0)
         # would have a different sized feature map.
         poolscale = ((int)(scale[0]/scale_factor), (int)(scale[1]/scale_factor), (int)(scale[2]/scale_factor));
         self.model.avgpool = nn.AdaptiveAvgPool2d((poolscale[1],poolscale[2]))
