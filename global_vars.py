@@ -52,6 +52,7 @@ mirror_augment = {
 
 import models.classifiers as CLS
 import models.autoencoders as AES
+import models.pixelcnn.model as PCNN
 
 class ModelFactory(object):
     def __init__(self, parent_class, **kwargs):
@@ -97,6 +98,15 @@ dataset_reference_vaes = {
     'OMIDB':              [ModelFactory(AES.Generic_VAE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
 }
 
+dataset_reference_pcnns = {
+    'MNIST':              [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=32, input_channels=1, nr_logistic_mix=5)],
+    'FashionMNIST':       [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=64, input_channels=1, nr_logistic_mix=5)],
+    'CIFAR10':            [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+    'CIFAR100':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+    'TinyImagenetd32':    [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+    'STL10d32':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+}
+
 
 """
     This is where we keep a reference to all the methods.
@@ -111,6 +121,7 @@ import methods.mcdropout as MCD
 import methods.deep_ensemble as DE
 import methods.odin as ODIN
 import methods.reconstruction_error as RE
+import methods.pixelcnn as PCNN
 import methods.openmax as OM
 
 all_methods = {
@@ -126,6 +137,7 @@ all_methods = {
     'deep_ensemble':    DE.DeepEnsemble,
     'odin':             ODIN.ODIN,
     'reconst_thresh':   RE.ReconstructionThreshold,
+    'pixelcnn':         PCNN.PixelCNN,
     'openmax':          OM.OpenMax,
 }
 

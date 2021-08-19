@@ -14,7 +14,7 @@ import categories.classifier_setup as CLSetup
 import categories.kway_logistic_setup as KLogisticSetup
 import categories.deep_ensemble_setup as DeepEnsembleSetup
 import categories.ae_setup as AESetup
-#import categories.pixelcnn_setup as PCNNSetup
+import categories.pixelcnn_setup as PCNNSetup
 
 if args.exp != 'model_ref':
     print('The exp is NOT model_ref!')
@@ -41,10 +41,10 @@ if __name__ == "__main__":
         (Global.dataset_reference_classifiers, CLSetup.train_classifier,            True, ['base']),
         (Global.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
         (Global.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
-        #(Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
-        #(Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
-        #(Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
-        # (Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
+        (Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
+        (Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
+        (Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
+        (Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
     ]
 
     # Do a for loop to run the training tasks.
