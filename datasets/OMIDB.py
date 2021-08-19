@@ -4,6 +4,8 @@ from torchvision import datasets
 
 from datasets import SubDataset, AbstractDomainInterface
 
+IMG_SIZE = 256
+
 class OMIDB(AbstractDomainInterface):
     """
         OPTIMAM OMI-DB mammographic dataset.
@@ -11,8 +13,6 @@ class OMIDB(AbstractDomainInterface):
         D1: (80% train + 10% valid) + (10% test)
         D2: 90% valid + 10% test.
     """
-
-    IMG_SIZE = 256
 
     def __init__(self):
         super(OMIDB, self).__init__()
