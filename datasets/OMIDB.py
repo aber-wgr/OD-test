@@ -2,6 +2,8 @@ import torch
 import torchvision.transforms as transforms
 from torchvision import datasets
 
+import numpy as np
+
 from datasets import SubDataset, AbstractDomainInterface
 
 IMG_SIZE = 256
