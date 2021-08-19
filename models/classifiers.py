@@ -235,6 +235,9 @@ class Scaled_Resnet(nn.Module):
             output = F.log_softmax(output, dim=1)
         return output
 
+    def get_output_device(self):
+        return torch.device('cuda:0')
+
     def output_size(self):
         return torch.LongTensor([1, classes])
 
