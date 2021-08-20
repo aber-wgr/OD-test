@@ -83,8 +83,6 @@ class IterativeTrainer(object):
 
             input, target = input.to(self.device), target.to(model.get_output_device())
 
-            print("Input Shape:" + str(input.size()))
-
             # Do a forward propagation and get the loss.
             prediction = None
             if data_indices is None:
