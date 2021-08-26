@@ -48,7 +48,7 @@ class OMIDB(AbstractDomainInterface):
         self.calculate_D1_weighting()
 
     def calculate_D1_weighting(self):
-        train_set = get_D1_train()
+        train_set = self.get_D1_train()
         nc = self.get_num_classes()
         count = [0] * nc                                                      
         for item in train_set:                                                         
