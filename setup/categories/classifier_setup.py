@@ -24,7 +24,7 @@ def get_classifier_config(args, model, domain):
 
     train_sampler = domain.get_train_sampler()
 
-    if (dataset.name in Global.mirror_augment) and (train_sampler is None):
+    if (domain.name in Global.mirror_augment) and (train_sampler is None):
         print("Mirror augmenting %s"%dataset.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds
@@ -34,7 +34,7 @@ def get_classifier_config(args, model, domain):
     
     train_loader = DataLoader(train_ds, train_sampler, batch_size=args.batch_size, shuffle=(train_sampler is None), num_workers=args.workers, pin_memory=pin)
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
-    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
+    all_loader   = DataLoader(domain.get_D2_valid(),  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
 
     # Set up the criterion
     #criterion = nn.NLLLoss().to(args.device)
@@ -46,7 +46,7 @@ def get_classifier_config(args, model, domain):
     # Set up the config
     config = IterativeTrainerConfig()
 
-    config.name = 'classifier_%s_%s'%(dataset.name, model.__class__.__name__)
+    config.name = 'classifier_%s_%s'%(domain.name, model.__class__.__name__)
 
     config.train_loader = train_loader
     config.valid_loader = valid_loader
@@ -75,12 +75,11 @@ def get_classifier_config(args, model, domain):
     return config
 
 def train_classifier(args, model, domain):
-    dataset = domain.get_D1_train()
     config = get_classifier_config(args, model, domain)
 
     
 
-    home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, dataset.name, model_setup=True, suffix_str='base')
+    home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, domain.name, model_setup=True, suffix_str='base')
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
     if not os.path.isdir(home_path):
