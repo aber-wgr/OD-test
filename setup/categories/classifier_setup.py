@@ -21,10 +21,12 @@ def get_classifier_config(args, model, domain):
     # 80%, 20% for local train+test
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
+    train_sampler = WeightedRandomSampler(domain.get_D1_train_weighting(), len(train_ds),replacement=False)
+
     #train_ds = domain.get_D1_train()
     #valid_ds = domain.get_D1_valid()
 
-    train_sampler = domain.get_train_sampler()
+    # train_sampler = domain.get_train_sampler()
 
     if (domain.name in Global.mirror_augment) and (train_sampler is None):
         print("Mirror augmenting %s"%domain.name)
