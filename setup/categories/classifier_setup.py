@@ -32,7 +32,7 @@ def get_classifier_config(args, model, domain):
     # Initialize the multi-threaded loaders.
     pin = (args.device != 'cpu')
     
-    train_loader = DataLoader(train_ds, train_sampler, batch_size=args.batch_size, shuffle=(train_sampler is None), num_workers=args.workers, pin_memory=pin)
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size,  shuffle=(train_sampler is None), sampler=train_sampler, num_workers=args.workers, pin_memory=pin)
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
     all_loader   = DataLoader(domain.get_D2_valid(),  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
 
