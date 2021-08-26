@@ -2,6 +2,8 @@ import torch
 import torchvision.transforms as transforms
 from torchvision import datasets
 
+from torch.utils.data import WeightedRandomSampler
+
 import numpy as np
 
 from sklearn.model_selection import train_test_split
@@ -43,6 +45,16 @@ class OMIDB(AbstractDomainInterface):
 
         self.base_dataset = base_dataset
 
+    def calculate_D1_weighting(self):
+        train_set = get_D1_train()
+        nc = self.get_num_classes()
+        count = [0] * nc                                                      
+        for item in train_set:                                                         
+            count[item[1]] += 1                                                     
+        self.train_class_weight = [0.] * nc                                      
+        for i in range(nc):                                                   
+            self.train_class_weight[i] = 1.0/float(count[i])
+
     
     def get_D1_train(self):
         return SubDataset(self.name, self.base_dataset, self.D1_train_ind)
@@ -51,6 +63,13 @@ class OMIDB(AbstractDomainInterface):
     def get_D1_test(self):
         return SubDataset(self.name, self.base_dataset, self.D1_test_ind, label=0)
 
+    def get_D1_train_weighting(self):
+        d1_set = get_D1_train()
+        weights = [0] * len(d1_set)                                              
+        for idx, val in enumerate(d1_set):                                          
+            weights[idx] = self.train_class_weight[val[1]]                                  
+        return weights
+
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
         return SubDataset(self.name, self.base_dataset, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
@@ -58,6 +77,12 @@ class OMIDB(AbstractDomainInterface):
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
         return SubDataset(self.name, self.base_dataset, self.D2_test_ind, label=1, transform=D1.conformity_transform())
+
+    def get_num_classes(self):
+        return 5
+
+    def get_train_sampler(self):
+        return WeightedRandomSampler(get_D1_train_weighting, len(self.D1_train_ind),replacement=False)
 
     def conformity_transform(self):
         return transforms.Compose([transforms.ToPILImage(),

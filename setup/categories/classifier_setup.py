@@ -13,7 +13,7 @@ from datasets import MirroredDataset
 
 import torchinfo
 
-def get_classifier_config(args, model, dataset):
+def get_classifier_config(args, model, dataset,train_sampler=None):
     print("Preparing training D1 for %s"%(dataset.name))
 
     # 80%, 20% for local train+test
@@ -26,7 +26,7 @@ def get_classifier_config(args, model, dataset):
 
     # Initialize the multi-threaded loaders.
     pin = (args.device != 'cpu')
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=pin)
+    train_loader = DataLoader(train_ds, sampler=train_sampler, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=pin)
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
     all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
 
@@ -68,8 +68,11 @@ def get_classifier_config(args, model, dataset):
 
     return config
 
-def train_classifier(args, model, dataset):
-    config = get_classifier_config(args, model, dataset)
+def train_classifier(args, model, domain):
+    dataset = domain.get_D1_train()
+    config = get_classifier_config(args, model, dataset,domain.get_train_sampler())
+
+    
 
     home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, dataset.name, model_setup=True, suffix_str='base')
     hbest_path = os.path.join(home_path, 'model.best.pth')

@@ -108,6 +108,9 @@ class AbstractDomainInterface(object):
     def get_D1_test(self):
         raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
 
+    def get_train_sampler(self):
+        return None
+
     """
         D2's are used for the validation and target datasets.
         They are only used in validation (stage 2) and test (stage 3).

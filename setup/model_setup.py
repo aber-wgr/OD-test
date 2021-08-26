@@ -60,4 +60,4 @@ if __name__ == "__main__":
             for model in ref_list[dataset]:
                 model = model()
                 print('Training %s'%(model.__class__.__name__))
-                train_func(args, model, ds.get_D1_train())
+                train_func(args, model, ds)
