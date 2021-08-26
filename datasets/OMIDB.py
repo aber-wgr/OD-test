@@ -82,7 +82,7 @@ class OMIDB(AbstractDomainInterface):
         return 5
 
     def get_train_sampler(self):
-        return WeightedRandomSampler(get_D1_train_weighting(), len(self.D1_train_ind),replacement=False)
+        return WeightedRandomSampler(self.get_D1_train_weighting(), len(self.D1_train_ind),replacement=False)
 
     def conformity_transform(self):
         return transforms.Compose([transforms.ToPILImage(),
