@@ -77,8 +77,6 @@ def get_classifier_config(args, model, domain):
 def train_classifier(args, model, domain):
     config = get_classifier_config(args, model, domain)
 
-    
-
     home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, domain.name, model_setup=True, suffix_str='base')
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
