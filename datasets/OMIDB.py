@@ -27,7 +27,7 @@ class OMIDB(AbstractDomainInterface):
         size_str = str(IMG_SIZE)
         root_path       = './workspace/datasets/omidb/' + size_str
 
-        base_dataset = datasets.ImageFolder(root_path,transform=self.conformity_transform())
+        base_dataset = datasets.ImageFolder(root_path,transform=im_transformer)
 
         indices = np.arange(len(base_dataset))
         train_indices_np, test_indices_np = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
@@ -44,6 +44,8 @@ class OMIDB(AbstractDomainInterface):
         self.D2_valid_ind = torch.from_numpy(D2_valid_ind_np)
 
         self.base_dataset = base_dataset
+
+        self.calculate_D1_weighting()
 
     def calculate_D1_weighting(self):
         train_set = get_D1_train()
