@@ -16,11 +16,13 @@ import torchinfo
 def get_classifier_config(args, model, domain):
     print("Preparing training D1 for %s"%(domain.name))
 
-    # 80%, 20% for local train+test
-    #train_ds, valid_ds = dataset.split_dataset(0.8)
+    dataset = domain.get_D1_train()
 
-    train_ds = domain.get_D1_train()
-    valid_ds = domain.get_D1_valid()
+    # 80%, 20% for local train+test
+    train_ds, valid_ds = dataset.split_dataset(0.8)
+
+    #train_ds = domain.get_D1_train()
+    #valid_ds = domain.get_D1_valid()
 
     train_sampler = domain.get_train_sampler()
 
