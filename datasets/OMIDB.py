@@ -27,7 +27,7 @@ class OMIDB(AbstractDomainInterface):
         size_str = str(IMG_SIZE)
         root_path       = './workspace/datasets/omidb/' + size_str
 
-        base_dataset = datasets.ImageFolder(root_path,transform=im_transformer)
+        base_dataset = datasets.ImageFolder(root_path,transform=self.conformity_transform())
 
         indices = np.arange(len(base_dataset))
         train_indices_np, test_indices_np = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
