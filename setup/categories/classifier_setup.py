@@ -106,6 +106,7 @@ def train_classifier(args, model, domain):
             trainer.run_epoch(epoch, phase='test')
 
             train_loss = config.logger.get_measure('train_loss').mean_epoch()
+            print("Epoch Mean Loss:" + str(train_loss))
             config.scheduler.step(train_loss)
 
             test_average_acc = config.logger.get_measure('test_accuracy').mean_epoch()
