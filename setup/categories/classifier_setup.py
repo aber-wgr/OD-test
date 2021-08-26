@@ -13,20 +13,24 @@ from datasets import MirroredDataset
 
 import torchinfo
 
-def get_classifier_config(args, model, dataset,train_sampler=None):
-    print("Preparing training D1 for %s"%(dataset.name))
+def get_classifier_config(args, model, domain):
+    print("Preparing training D1 for %s"%(domain.name))
 
     # 80%, 20% for local train+test
-    train_ds, valid_ds = dataset.split_dataset(0.8)
+    #train_ds, valid_ds = dataset.split_dataset(0.8)
 
-    if dataset.name in Global.mirror_augment:
-        print("Mirror augmenting %s"%dataset.name)
-        new_train_ds = train_ds + MirroredDataset(train_ds)
-        train_ds = new_train_ds
+    train_ds = domain.get_D1_train()
+    valid_ds = domain.get_D1_valid()
+
+    #if dataset.name in Global.mirror_augment:
+    #    print("Mirror augmenting %s"%dataset.name)
+    #    new_train_ds = train_ds + MirroredDataset(train_ds)
+    #    train_ds = new_train_ds
 
     # Initialize the multi-threaded loaders.
     pin = (args.device != 'cpu')
-    train_loader = DataLoader(train_ds, sampler=train_sampler, batch_size=args.batch_size, shuffle=(train_sampler is None), num_workers=args.workers, pin_memory=pin)
+    train_sampler = domain.get_train_sampler()
+    train_loader = DataLoader(train_ds, train_sampler, batch_size=args.batch_size, shuffle=(train_sampler is None), num_workers=args.workers, pin_memory=pin)
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
     all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
 
@@ -70,7 +74,7 @@ def get_classifier_config(args, model, dataset,train_sampler=None):
 
 def train_classifier(args, model, domain):
     dataset = domain.get_D1_train()
-    config = get_classifier_config(args, model, dataset,domain.get_train_sampler())
+    config = get_classifier_config(args, model, domain)
 
     
 
