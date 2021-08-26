@@ -11,6 +11,8 @@ from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
 from datasets import MirroredDataset
 
+from torch.utils.data import WeightedRandomSampler
+
 import torchinfo
 
 def get_classifier_config(args, model, domain):
