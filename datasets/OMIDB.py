@@ -23,7 +23,7 @@ class OMIDB(AbstractDomainInterface):
     def __init__(self):
         super(OMIDB, self).__init__()
 
-        im_transformer  = transforms.Compose([transforms.ToTensor()])
+        im_transformer  = transforms.Compose([transforms.Resize((IMG_SIZE, IMG_SIZE)), transforms.Grayscale(), transforms.ToTensor()])
         size_str = str(IMG_SIZE)
         root_path       = './workspace/datasets/omidb/' + size_str
 
