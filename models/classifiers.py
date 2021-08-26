@@ -28,6 +28,9 @@ class Scaled_VGG(nn.Module):
     def __init__(self,scale,classes,epochs,init_weights=True):
         super(Scaled_VGG, self).__init__()
 
+        self.dev1 = torch.device('cuda:0')
+        self.dev2 = torch.device('cuda:0')
+
         # Based on the imagenet normalization params.
         self.offset = 0.44900
         self.multiplier = 4.42477
@@ -64,6 +67,8 @@ class Scaled_VGG(nn.Module):
             nn.Linear(classifier_width, classes),
         )
 
+        self.model = self.model.to(self.dev1)
+
         torchinfo.summary(self.model, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(32, self.scale[0], self.scale[1], self.scale[2]))
 
         if(init_weights):
@@ -73,11 +78,14 @@ class Scaled_VGG(nn.Module):
 
     def forward(self, x, softmax=True):
         # Perform late normalization.
+        x = x.to(self.dev1)
         x = (x-self.offset)*self.multiplier
 
         output = self.model(x)
         if softmax:
             output = F.log_softmax(output, dim=1)
+
+        output = output.to(self.dev2)
         return output
 
     def get_info(self,args):
@@ -90,6 +98,10 @@ class Scaled_VGG(nn.Module):
 
     def output_size(self):
         return torch.LongTensor([1, classes])
+
+    # because the model is split, we need to know which device the outputs go to put the labels on so the loss function can do the comparison
+    def get_output_device(self):
+        return self.dev2
 
     def train_config(self):
         config = {}
@@ -214,6 +226,9 @@ class Scaled_Resnet(nn.Module):
         self.offset = 0.44900
         self.multiplier = 4.42477
 
+        self.dev1 = torch.device('cuda:0')
+        self.dev2 = torch.device('cuda:0')
+
         # Resnet50.
         layers = [2, 3, 5, 2]
         if scale[0] > 1:
@@ -225,15 +240,20 @@ class Scaled_Resnet(nn.Module):
         del self.model.maxpool
         self.model.maxpool = lambda x: x # Remove the early maxpool.
 
+        self.model = self.model.to(self.dev1)
+
         self.epochs = epochs
 
     def forward(self, x, softmax=True):
         # Perform late normalization.
+        x = x.to(self.dev1)
         x = (x-self.offset)*self.multiplier
 
         output = self.model(x)
         if softmax:
             output = F.log_softmax(output, dim=1)
+
+        output = output.to(self.dev2)
         return output
 
     def get_output_device(self):
@@ -241,6 +261,9 @@ class Scaled_Resnet(nn.Module):
 
     def output_size(self):
         return torch.LongTensor([1, classes])
+
+    def get_output_device(self):
+        return self.dev2
 
     def train_config(self):
         config = {}
