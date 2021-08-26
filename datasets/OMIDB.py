@@ -64,7 +64,7 @@ class OMIDB(AbstractDomainInterface):
         return SubDataset(self.name, self.base_dataset, self.D1_test_ind, label=0)
 
     def get_D1_train_weighting(self):
-        d1_set = get_D1_train()
+        d1_set = self.get_D1_train()
         weights = [0] * len(d1_set)                                              
         for idx, val in enumerate(d1_set):                                          
             weights[idx] = self.train_class_weight[val[1]]                                  
