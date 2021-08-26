@@ -166,7 +166,7 @@ class Scaled_VGG_2GPU(Scaled_VGG):
 
 class Scaled_VGG_2GPU_Pipeline(Scaled_VGG_2GPU):
     #taken pretty straight from https://pytorch.org/tutorials/intermediate/model_parallel_tutorial.html
-    def __init__(self, split_size=2, *args, **kwargs):
+    def __init__(self, split_size=8, *args, **kwargs):
         super(Scaled_VGG_2GPU_Pipeline, self).__init__(*args,**kwargs)
         self.split_size = split_size
             
@@ -293,7 +293,7 @@ class Scaled_Resnet_2GPU(Scaled_Resnet):
 
 class Scaled_Resnet_2GPU_Pipeline(Scaled_Resnet_2GPU):
     #taken pretty straight from https://pytorch.org/tutorials/intermediate/model_parallel_tutorial.html
-    def __init__(self, split_size=2, *args, **kwargs):
+    def __init__(self, split_size=8, *args, **kwargs):
         super(Scaled_Resnet_2GPU_Pipeline, self).__init__(*args,**kwargs)
         self.split_size = split_size
             
