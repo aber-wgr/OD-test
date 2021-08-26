@@ -22,14 +22,16 @@ def get_classifier_config(args, model, domain):
     train_ds = domain.get_D1_train()
     valid_ds = domain.get_D1_valid()
 
-    #if dataset.name in Global.mirror_augment:
-    #    print("Mirror augmenting %s"%dataset.name)
-    #    new_train_ds = train_ds + MirroredDataset(train_ds)
-    #    train_ds = new_train_ds
+    train_sampler = domain.get_train_sampler()
+
+    if (dataset.name in Global.mirror_augment) and (train_sampler is None):
+        print("Mirror augmenting %s"%dataset.name)
+        new_train_ds = train_ds + MirroredDataset(train_ds)
+        train_ds = new_train_ds
 
     # Initialize the multi-threaded loaders.
     pin = (args.device != 'cpu')
-    train_sampler = domain.get_train_sampler()
+    
     train_loader = DataLoader(train_ds, train_sampler, batch_size=args.batch_size, shuffle=(train_sampler is None), num_workers=args.workers, pin_memory=pin)
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
     all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
