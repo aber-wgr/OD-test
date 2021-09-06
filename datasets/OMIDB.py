@@ -85,7 +85,7 @@ class OMIDB(AbstractDomainInterface):
         return SubDataset(self.name, self.base_dataset, self.D2_test_ind, label=1, transform=D1.conformity_transform())
 
     def get_num_classes(self):
-        return 5
+        return 2
 
     def get_train_sampler(self):
         return WeightedRandomSampler(self.get_D1_train_weighting(), len(self.D1_train_ind),replacement=False)
