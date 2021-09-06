@@ -75,7 +75,7 @@ dataset_reference_classifiers = {
 #    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=120)],
 #    'STL10':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120)],
 #    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120)],
-    'OMIDB':                  [ModelFactory(CLS.Scaled_VGG, scale=(1, 256, 256), classes=5, epochs=30), ModelFactory(CLS.Scaled_Resnet, scale=(1, 256, 256), classes=5, epochs=30)],
+    'OMIDB':                  [ModelFactory(CLS.Scaled_VGG, scale=(1, 256, 256), classes=2, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(1, 256, 256), classes=2, epochs=120)],
 }
 
 dataset_reference_autoencoders = {
@@ -104,7 +104,7 @@ dataset_reference_pcnns = {
     'CIFAR10':            [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
     'CIFAR100':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
     'TinyImagenetd32':    [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
-    'STL10d32':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+    'STL10d32':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=1, nr_logistic_mix=10)],
 }
 
 

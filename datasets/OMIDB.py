@@ -25,7 +25,7 @@ class OMIDB(AbstractDomainInterface):
 
         im_transformer  = transforms.Compose([transforms.Resize((IMG_SIZE, IMG_SIZE)), transforms.Grayscale(), transforms.ToTensor()])
         size_str = str(IMG_SIZE)
-        root_path       = './workspace/datasets/omidb/' + size_str
+        root_path       = './workspace/datasets/lesions_segments/'
 
         base_dataset = datasets.ImageFolder(root_path,transform=im_transformer)
 
