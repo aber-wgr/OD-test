@@ -46,6 +46,22 @@ mirror_augment = {
     'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'
 }
 
+dataset_scales = {
+    'MNIST':                  '1,28,28',
+    'FashionMNIST':           '1,28,28',
+    'CIFAR10':                '3,32,32',
+    'CIFAR100':               '3,32,32',
+    'STL10':                  '3, 96, 96',
+    'TinyImagenet':           '3, 64, 64'
+    }
+
+def get_dataset_scale(dataset):
+    scale_string = dataset_scale[dataset]
+    scale = tuple(map(int, scale_string.split(', ')))
+    return scale
+
+
+
 """
     This where we keep a reference to all the models in the project.
 """
@@ -58,6 +74,10 @@ class ModelFactory(object):
     def __init__(self, parent_class, **kwargs):
         self.parent_class = parent_class
         self.kwargs = kwargs
+
+    def add(self,arg,value):
+        self.kwargs[arg] = value
+
     def __call__(self):
         return self.parent_class(**self.kwargs)
 
@@ -69,13 +89,13 @@ class ModelFactory(object):
 """
 
 dataset_reference_classifiers = {
-#    'MNIST':                  [ModelFactory(CLS.Scaled_VGG, scale=(1,28,28), classes=10, epochs=50), ModelFactory(CLS.Scaled_Resnet, scale=(1,28,28), classes=10, epochs=50)],
-#    'FashionMNIST':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60)],
-#    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG, scale=(3,32,32), classes=10, epochs=30), ModelFactory(CLS.Scaled_Resnet, scale=(3,32,32), classes=10, epochs=30)],
-#    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=120)],
-#    'STL10':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120)],
-#    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120)],
-    'OMIDB':                  [ModelFactory(CLS.Scaled_VGG, scale=(1, 256, 256), classes=2, epochs=120), ModelFactory(CLS.Scaled_Resnet, scale=(1, 256, 256), classes=2, epochs=120)],
+    'MNIST':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60)],
+    'FashionMNIST':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60)],
+    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60)],
+    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60)],
+    'STL10':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120)],
+    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120)],
+    'OMIDB':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1, 256, 256), classes=2, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1, 256, 256), classes=2, epochs=120)],
 }
 
 dataset_reference_autoencoders = {
@@ -105,6 +125,7 @@ dataset_reference_pcnns = {
     'CIFAR100':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
     'TinyImagenetd32':    [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
     'STL10d32':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=1, nr_logistic_mix=10)],
+    'OMIDB':              [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=1, nr_logistic_mix=10)],
 }
 
 
