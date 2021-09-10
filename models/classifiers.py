@@ -277,8 +277,8 @@ class Scaled_Resnet(nn.Module):
 
 class Scaled_Resnet_2GPU(Scaled_Resnet):
 
-    def __init__(self,scale,classes,epochs):
-        super(Scaled_Resnet_2GPU,self).__init__(scale,classes,epochs)
+    def __init__(self,scale,classes,epochs,split_size):
+        super(Scaled_Resnet_2GPU,self).__init__(scale,classes,epochs,split_size)
         
         self.dev1 = torch.device('cuda:0')
         self.dev2 = torch.device('cuda:1')
