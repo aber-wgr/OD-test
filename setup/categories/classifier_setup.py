@@ -20,8 +20,6 @@ def get_classifier_config(args, model, domain):
 
     dataset = domain.get_D1_train()
 
-    dataset = domain.get_D1_train()
-
     # 80%, 20% for local train+test
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
