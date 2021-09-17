@@ -91,41 +91,41 @@ class ModelFactory(object):
 dataset_reference_classifiers = {
     'MNIST':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60)],
     'FashionMNIST':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60)],
-    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60)],
-    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60)],
-    'STL10':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120)],
-    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120)],
-    'OMIDB':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1, 256, 256), classes=2, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1, 256, 256), classes=2, epochs=120)],
+#    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60)],
+#    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60)],
+#    'STL10':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120)],
+#    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120)],
+#    'OMIDB':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1, 256, 256), classes=2, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1, 256, 256), classes=2, epochs=120)],
 }
 
 dataset_reference_autoencoders = {
     'MNIST':              [ModelFactory(AES.Generic_AE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
     'FashionMNIST':       [ModelFactory(AES.Generic_AE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
-    'CIFAR10':            [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
-    'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
-    'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
-    'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
-    'OMIDB':              [ModelFactory(AES.Generic_AE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
+#    'CIFAR10':            [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+#    'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+#    'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
+#    'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+#    'OMIDB':              [ModelFactory(AES.Generic_AE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_vaes = {
     'MNIST':              [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
     'FashionMNIST':       [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
-    'CIFAR10':            [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
-    'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
-    'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
-    'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
-    'OMIDB':              [ModelFactory(AES.Generic_VAE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
+ #   'CIFAR10':            [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+ #   'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+ #   'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
+ #   'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+ #   'OMIDB':              [ModelFactory(AES.Generic_VAE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_pcnns = {
     'MNIST':              [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=32, input_channels=1, nr_logistic_mix=5)],
     'FashionMNIST':       [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=64, input_channels=1, nr_logistic_mix=5)],
-    'CIFAR10':            [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
-    'CIFAR100':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
-    'TinyImagenetd32':    [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
-    'STL10d32':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=1, nr_logistic_mix=10)],
-    'OMIDB':              [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=1, nr_logistic_mix=10)],
+  #  'CIFAR10':            [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+  #  'CIFAR100':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+  #  'TinyImagenetd32':    [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=3, nr_logistic_mix=10)],
+  #  'STL10d32':           [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=1, nr_logistic_mix=10)],
+  #  'OMIDB':              [ModelFactory(PCNN.PixelCNN, nr_resnet=5, nr_filters=160, input_channels=1, nr_logistic_mix=10)],
 }
 
 

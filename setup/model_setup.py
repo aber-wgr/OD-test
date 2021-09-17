@@ -44,7 +44,7 @@ if __name__ == "__main__":
         (Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
         (Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
         (Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
-        #(Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
+        (Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
     ]
 
     # Do a for loop to run the training tasks.

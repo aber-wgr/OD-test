@@ -122,7 +122,7 @@ class PixelCNN(nn.Module):
         if (self.init_padding is None or self.init_padding.size(0) != x.size(0)) and not sample: 
             xs = [int(y) for y in x.size()]
             padding = torch.ones(xs[0], 1, xs[2], xs[3])
-            x_dev = x.device()
+            x_dev = x.device
             self.init_padding = padding.to(x_dev)
         
         if sample : 
