@@ -353,7 +353,7 @@ class Scaled_Densenet(nn.Module):
         Using Densenet121
     """
     def __init__(self,scale,classes,epochs,split_size=0):
-        super(Scaled_Resnet, self).__init__()
+        super(Scaled_Densenet, self).__init__()
         # Based on the imagenet normalization params.
         self.offset = 0.44900
         self.multiplier = 4.42477
