@@ -94,7 +94,7 @@ class IterativeTrainer(object):
                 prediction = model(input, indices=data_indices, group=phase_name)
             #print("Prediction Type:" + prediction.type())
             #print("Target Type:" + target.type())
-            loss = criterion(prediction, target.to(prediction.dtype))
+            loss = criterion(prediction.to(target.dtype), target)
 
             if backward:
                 if stochastic:
