@@ -65,6 +65,7 @@ def get_classifier_config(args, model, domain):
                     'all':     {'dataset' : all_loader,    'backward': False},                        
                     }
     config.criterion = criterion
+    config.cast_float_label = (domain.get_num_classes() == 1)
     config.classification = domain.get_num_classes() > 1
     config.stochastic_gradient = True
 
@@ -102,7 +103,7 @@ def train_classifier(args, model, domain):
     if not os.path.isfile(hbest_path+".done"):
         print('Training from scratch')
         
-        best_accuracy = -1
+        best_accuracy = -255
         for epoch in range(1, config.max_epoch+1):
 
             # Track the learning rates.
