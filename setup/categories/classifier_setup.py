@@ -65,7 +65,7 @@ def get_classifier_config(args, model, domain):
                     'all':     {'dataset' : all_loader,    'backward': False},                        
                     }
     config.criterion = criterion
-    config.classification = True
+    config.classification = domain.get_num_classes() > 1
     config.stochastic_gradient = True
 
     config.model = model
