@@ -13,6 +13,7 @@ from datasets import SubDataset, AbstractDomainInterface
 IMG_SIZE = 256
 
 from typing import Dict, Any
+from pathlib import Path, PurePath
 
 class RegressionImageFolder(datasets.ImageFolder):
     def __init__(
@@ -20,7 +21,11 @@ class RegressionImageFolder(datasets.ImageFolder):
     ) -> None:
         super().__init__(root, **kwargs)
         paths, _ = zip(*self.imgs)
-        self.targets = [image_scores[path] for path in paths]
+        self.targets = []
+        for path in paths:
+            ppath = Path(path).resolve()
+            parent_folder = ppath.parent.name
+            self.targets.append(image_scores[parent_folder])
         self.samples = self.imgs = list(zip(paths, self.targets))
 
 class OMIDB(AbstractDomainInterface):
@@ -36,7 +41,7 @@ class OMIDB(AbstractDomainInterface):
 
         im_transformer  = transforms.Compose([transforms.Resize((IMG_SIZE, IMG_SIZE)), transforms.Grayscale(), transforms.ToTensor()])
         size_str = str(IMG_SIZE)
-        root_path       = './workspace/datasets/lesion_segments/'
+        root_path       = './workspace/datasets/omidb/256'
 
         image_scores = { "R1" : 1.0, "R2" : 2.0, "R3" : 3.0, "R4" : 4.0, "R5" : 5.0 }
 
