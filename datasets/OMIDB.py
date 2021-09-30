@@ -74,8 +74,8 @@ class OMIDB(AbstractDomainInterface):
     def get_D1_train_weighting(self):
         d1_set = self.get_D1_train()
         weights = [0] * len(d1_set)                                              
-        for idx, val in enumerate(d1_set):                                          
-            weights[idx] = self.train_class_weight[val[1]]                                  
+        #for idx, val in enumerate(d1_set):                                          
+        #    weights[idx] = self.train_class_weight[val[1]]                                  
         return weights
 
     def get_D2_valid(self, D1):
@@ -87,10 +87,10 @@ class OMIDB(AbstractDomainInterface):
         return SubDataset(self.name, self.base_dataset, self.D2_test_ind, label=1, transform=D1.conformity_transform())
 
     def get_num_classes(self):
-        return 2
+        return 1
 
     def get_train_sampler(self):
-        return WeightedRandomSampler(self.get_D1_train_weighting(), len(self.D1_train_ind),replacement=False)
+        return None
 
     def conformity_transform(self):
         return transforms.Compose([transforms.ToPILImage(),
