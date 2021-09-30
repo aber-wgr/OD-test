@@ -12,6 +12,17 @@ from datasets import SubDataset, AbstractDomainInterface
 
 IMG_SIZE = 256
 
+from typing import Dict, Any
+
+class RegressionImageFolder(datasets.ImageFolder):
+    def __init__(
+        self, root: str, image_scores: Dict[str, float], **kwargs: Any
+    ) -> None:
+        super().__init__(root, **kwargs)
+        paths, _ = zip(*self.imgs)
+        self.targets = [image_scores[path] for path in paths]
+        self.samples = self.imgs = list(zip(paths, self.targets))
+
 class OMIDB(AbstractDomainInterface):
     """
         OPTIMAM OMI-DB mammographic dataset.
@@ -27,7 +38,9 @@ class OMIDB(AbstractDomainInterface):
         size_str = str(IMG_SIZE)
         root_path       = './workspace/datasets/lesion_segments/'
 
-        base_dataset = datasets.ImageFolder(root_path,transform=im_transformer)
+        image_scores = { "R1" : 1.0, "R2" : 2.0, "R3" : 3.0, "R4" : 4.0, "R5" : 5.0 }
+
+        base_dataset = datasets.RegressionImageFolder(root=root_path,transform=im_transformer,image_scores=image_scores)
 
         indices = np.arange(len(base_dataset))
         train_indices_np, test_indices_np = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
@@ -50,17 +63,6 @@ class OMIDB(AbstractDomainInterface):
 
     def get_weights_by_class(self):
         return self.train_class_weight
-
-#    def calculate_D1_weighting(self):
-#        train_set = self.get_D1_train()
-#        nc = self.get_num_classes()
-#        count = [0] * nc                                                      
-#        for item in train_set:                                                         
-#            count[item[1]] += 1                                                     
-#        self.train_class_weight = [0.] * nc                                      
-#        for i in range(nc):                                                   
-#            self.train_class_weight[i] = 1.0/float(count[i])
-
     
     def get_D1_train(self):
         return SubDataset(self.name, self.base_dataset, self.D1_train_ind)

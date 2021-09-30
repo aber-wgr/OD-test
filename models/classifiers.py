@@ -33,6 +33,8 @@ class Scaled_VGG(nn.Module):
 
         self.split_size = split_size
 
+        self.classes = classes
+
         # Based on the imagenet normalization params.
         self.offset = 0.44900
         self.multiplier = 4.42477
@@ -96,7 +98,10 @@ class Scaled_VGG(nn.Module):
         return self.info
 
     def output_size(self):
-        return torch.LongTensor([1, classes])
+        return torch.LongTensor([1, self.classes])
+
+    def get_num_classes(self):
+        return self.classes
 
     # because the model is split, we need to know which device the outputs go to put the labels on so the loss function can do the comparison
     def get_output_device(self):
@@ -166,7 +171,10 @@ class Scaled_VGG_2GPU(Scaled_VGG):
         return self.dev2
 
     def output_size(self):
-        return torch.LongTensor([1, classes])
+        return torch.LongTensor([1, self.classes])
+
+    def get_num_classes(self):
+        return self.classes
 
     def train_config(self):
         config = {}
@@ -260,7 +268,10 @@ class Scaled_Resnet(nn.Module):
         return torch.device('cuda:0')
 
     def output_size(self):
-        return torch.LongTensor([1, classes])
+        return torch.LongTensor([1, self.classes])
+
+    def get_num_classes(self):
+        return self.classes
 
     def get_output_device(self):
         return self.dev2

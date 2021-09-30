@@ -44,9 +44,11 @@ def get_classifier_config(args, model, domain):
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
     all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
 
-    # Set up the criterion
-    #criterion = nn.NLLLoss().to(args.device)
-    criterion = nn.NLLLoss() # the labels are now put on the output device
+    # Set up the criterion. If this is a regression, use Mean Squared Error; otherwise use Negative Log Likelihood
+    if(domain.get_num_classes() == 1):
+        criterion = nn.MSELoss()
+    else:
+        criterion = nn.NLLLoss() 
 
     # Set up the model
     #model = model.to(args.device) # this is set up inside the split model itself
