@@ -12,6 +12,22 @@ from datasets import SubDataset, AbstractDomainInterface
 
 IMG_SIZE = 256
 
+from typing import Dict, Any
+from pathlib import Path, PurePath
+
+class RegressionImageFolder(datasets.ImageFolder):
+    def __init__(
+        self, root: str, image_scores: Dict[str, float], **kwargs: Any
+    ) -> None:
+        super().__init__(root, **kwargs)
+        paths, _ = zip(*self.imgs)
+        self.targets = []
+        for path in paths:
+            ppath = Path(path).resolve()
+            parent_folder = ppath.parent.name
+            self.targets.append(image_scores[parent_folder])
+        self.samples = self.imgs = list(zip(paths, self.targets))
+
 class OMIDB(AbstractDomainInterface):
     """
         OPTIMAM OMI-DB mammographic dataset.
@@ -25,9 +41,11 @@ class OMIDB(AbstractDomainInterface):
 
         im_transformer  = transforms.Compose([transforms.Resize((IMG_SIZE, IMG_SIZE)), transforms.Grayscale(), transforms.ToTensor()])
         size_str = str(IMG_SIZE)
-        root_path       = './workspace/datasets/lesion_segments/'
+        root_path       = './workspace/datasets/omidb/256'
 
-        base_dataset = datasets.ImageFolder(root_path,transform=im_transformer)
+        image_scores = { "R1" : 1.0, "R2" : 2.0, "R3" : 3.0, "R4" : 4.0, "R5" : 5.0 }
+
+        base_dataset = RegressionImageFolder(root=root_path,transform=im_transformer,image_scores=image_scores)
 
         indices = np.arange(len(base_dataset))
         train_indices_np, test_indices_np = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
@@ -45,22 +63,11 @@ class OMIDB(AbstractDomainInterface):
 
         self.base_dataset = base_dataset
 
-        self.calculate_D1_weighting()
+        #self.calculate_D1_weighting()
 
 
     def get_weights_by_class(self):
         return self.train_class_weight
-
-#    def calculate_D1_weighting(self):
-#        train_set = self.get_D1_train()
-#        nc = self.get_num_classes()
-#        count = [0] * nc                                                      
-#        for item in train_set:                                                         
-#            count[item[1]] += 1                                                     
-#        self.train_class_weight = [0.] * nc                                      
-#        for i in range(nc):                                                   
-#            self.train_class_weight[i] = 1.0/float(count[i])
-
     
     def get_D1_train(self):
         return SubDataset(self.name, self.base_dataset, self.D1_train_ind)
@@ -72,8 +79,8 @@ class OMIDB(AbstractDomainInterface):
     def get_D1_train_weighting(self):
         d1_set = self.get_D1_train()
         weights = [0] * len(d1_set)                                              
-        for idx, val in enumerate(d1_set):                                          
-            weights[idx] = self.train_class_weight[val[1]]                                  
+        #for idx, val in enumerate(d1_set):                                          
+        #    weights[idx] = self.train_class_weight[val[1]]                                  
         return weights
 
     def get_D2_valid(self, D1):
@@ -85,10 +92,10 @@ class OMIDB(AbstractDomainInterface):
         return SubDataset(self.name, self.base_dataset, self.D2_test_ind, label=1, transform=D1.conformity_transform())
 
     def get_num_classes(self):
-        return 2
+        return 1
 
     def get_train_sampler(self):
-        return WeightedRandomSampler(self.get_D1_train_weighting(), len(self.D1_train_ind),replacement=False)
+        return None
 
     def conformity_transform(self):
         return transforms.Compose([transforms.ToPILImage(),
