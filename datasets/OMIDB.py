@@ -40,7 +40,7 @@ class OMIDB(AbstractDomainInterface):
 
         image_scores = { "R1" : 1.0, "R2" : 2.0, "R3" : 3.0, "R4" : 4.0, "R5" : 5.0 }
 
-        base_dataset = datasets.RegressionImageFolder(root=root_path,transform=im_transformer,image_scores=image_scores)
+        base_dataset = RegressionImageFolder(root=root_path,transform=im_transformer,image_scores=image_scores)
 
         indices = np.arange(len(base_dataset))
         train_indices_np, test_indices_np = train_test_split(indices, test_size=0.1, stratify=base_dataset.targets)
