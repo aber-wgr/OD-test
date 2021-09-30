@@ -92,8 +92,9 @@ class IterativeTrainer(object):
                 # some of the underlying optimization procedures. It is not
                 # always used though.
                 prediction = model(input, indices=data_indices, group=phase_name)
-
-            loss = criterion(prediction, target)
+            #print("Prediction Type:" + prediction.type())
+            #print("Target Type:" + target.type())
+            loss = criterion(prediction.double(), target.double())
 
             if backward:
                 if stochastic:
