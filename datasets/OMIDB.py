@@ -58,7 +58,7 @@ class OMIDB(AbstractDomainInterface):
 
         self.base_dataset = base_dataset
 
-        self.calculate_D1_weighting()
+        #self.calculate_D1_weighting()
 
 
     def get_weights_by_class(self):
