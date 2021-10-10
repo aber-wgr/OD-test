@@ -161,7 +161,6 @@ all_methods = {
     'deep_ensemble':    DE.DeepEnsemble,
     'odin':             ODIN.ODIN,
     'reconst_thresh':   RE.ReconstructionThreshold,
-    'waverecon_thresh': RE.WaveletReconstructionThreshold,
     'pixelcnn':         PCNN.PixelCNN,
     'openmax':          OM.OpenMax,
 }
@@ -193,11 +192,6 @@ def get_ref_autoencoder(dataset):
 def get_ref_vae(dataset):
     if dataset in dataset_reference_vaes:
         return dataset_reference_vaes[dataset]
-    raise NotImplementedError()
-
-def get_ref_wae(dataset):
-    if dataset in dataset_reference_waes:
-        return dataset_reference_waes[dataset]
     raise NotImplementedError()
 
 def get_method(name, args):

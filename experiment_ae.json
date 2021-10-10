@@ -31,7 +31,7 @@
     "TinyImagenet"
   ],
   "method_tasks": [
-    "waverecon_thresh/0",
-    "waverecon_thresh/1"
+    "reconst_thresh/0",
+    "reconst_thresh/1"
   ]
 }
