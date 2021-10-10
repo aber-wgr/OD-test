@@ -5,7 +5,6 @@ import errno
 import torch
 import torch.utils.data as data
 from PIL import Image
-from termcolor import colored
 import torchvision.transforms as transforms
 from datasets import SubDataset, AbstractDomainInterface
 
@@ -153,7 +152,7 @@ class NotMNIST(AbstractDomainInterface):
         if os.path.isfile(index_file):
             all_indices = torch.load(index_file)
         else:
-            print(colored('GENERATING PERMUTATION FOR NOT MNIST', 'red'))
+            print('GENERATING PERMUTATION FOR NOT MNIST')
             all_indices = torch.randperm(18724)
             torch.save(all_indices, index_file)
 
@@ -167,3 +166,6 @@ class NotMNIST(AbstractDomainInterface):
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
         return SubDataset(self.name, self.ds_train, self.D2_test_ind, label=1, transform=D1.conformity_transform())
+
+    def get_num_classes(self):
+        return 10

@@ -1,4 +1,3 @@
-from __future__ import print_function
 from os import path
 
 import torch
@@ -8,7 +7,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from utils.iterative_trainer import IterativeTrainerConfig, IterativeTrainer
 from utils.logger import Logger
-from termcolor import colored
 
 from methods import AbstractModelWrapper, SVMLoss
 import global_vars as Global
@@ -69,12 +67,13 @@ class PixelCNN(ProbabilityThreshold):
         if not path.isfile(best_h_path):
             raise NotImplementedError("Please use setup_model to pretrain the networks first! Can't find %s"%best_h_path)
         else:
-            print(colored('Loading H1 model from %s'%best_h_path, 'red'))
+            print('Loading H1 model from %s'%best_h_path)
             model.load_state_dict(torch.load(best_h_path))
             model.eval()
 
         # Set up the criterion
         criterion = PCNN_Loss(one_d = (model.input_channels==1)).to(self.args.device)
+        criterion.size_average = True
 
         # Set up the config
         config = IterativeTrainerConfig()
@@ -121,12 +120,14 @@ class PixelCNN(ProbabilityThreshold):
             train_ds = new_train_ds
 
         # Initialize the multi-threaded loaders.
+
         train_loader = DataLoader(train_ds, batch_size=self.args.batch_size, shuffle=True, num_workers=self.args.workers, pin_memory=True)
         valid_loader = DataLoader(valid_ds, batch_size=self.args.batch_size, shuffle=True, num_workers=self.args.workers, pin_memory=True)
 
         # To make the threshold learning, actually threshold learning
         # the margin must be set to 0.
         criterion = SVMLoss(margin=0.0).to(self.args.device)
+        criterion.size_average = True
 
         # Set up the model
         model = PixelCNNModelWrapper(self.base_model).to(self.args.device)

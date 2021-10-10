@@ -1,6 +1,5 @@
 from __future__ import print_function
 from os import path
-from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -34,6 +33,12 @@ class DeepEnsembleWrapper(nn.Module):
 
     def preferred_name(self):
         return self.model.__class__.__name__
+
+    def get_output_device(self):
+        return self.model.get_output_device()
+
+    def get_info(self,args):
+        return self.model.get_info(args)
 
     def output_size(self):
         return self.model.output_size()
@@ -101,6 +106,8 @@ class DeepEnsembleMasterWrapper(nn.Module):
     def preferred_name(self):
         return self.subwrappers[0].preferred_name()
 
+
+
 class DeepEnsembleModelWrapper(AbstractModelWrapper):
     """ The wrapper class for H.
         This is the network that is actually saved on evaluations.
@@ -138,8 +145,12 @@ class DeepEnsemble(ProbabilityThreshold):
 
         all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
 
+        im,l = dataset[0]
+        input_size = im.size() #datasets in pytorch are assumed to be uniform size
+
         # Set up the criterion
-        criterion = nn.NLLLoss().cuda()
+        criterion = nn.NLLLoss().to(self.args.device)
+        criterion.size_average = True
 
         # Set up the model
         model_class = Global.get_ref_classifier(dataset.name)[self.default_model]
@@ -157,7 +168,7 @@ class DeepEnsemble(ProbabilityThreshold):
             if not path.isfile(best_h_path):      
                 raise NotImplementedError("Please use setup_model to pretrain the networks first! Can't find %s"%best_h_path)
             else:
-                print(colored('Loading H1 model from %s'%best_h_path, 'red'))
+                print('Loading H1 model from %s'%best_h_path)
                 model.load_state_dict(torch.load(best_h_path))
                 model.eval()
             all_models.append(model)
@@ -197,13 +208,13 @@ class DeepEnsemble(ProbabilityThreshold):
 
     def get_H_config(self, dataset, will_train=True):
         print("Preparing training D1+D2 (H)")
-        print("Mixture size: %s"%colored('%d'%len(dataset), 'green'))
+        print("Mixture size: %s"%'%d'%len(dataset))
 
         # 80%, 20% for local train+test
         train_ds, valid_ds = dataset.split_dataset(0.8)
 
         if self.args.D1 in Global.mirror_augment:
-            print(colored("Mirror augmenting %s"%self.args.D1, 'green'))
+            print("Mirror augmenting %s"%self.args.D1)
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds
 
@@ -214,6 +225,7 @@ class DeepEnsemble(ProbabilityThreshold):
         # To make the threshold learning, actually threshold learning
         # the margin must be set to 0.
         criterion = SVMLoss(margin=0.0).to(self.args.device)
+        criterion.size_average = True
 
         # Set up the model
         model = DeepEnsembleModelWrapper(self.base_model).to(self.args.device)

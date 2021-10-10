@@ -1,6 +1,6 @@
-from __future__ import print_function
+#from __future__ import print_function
 from os import path
-from termcolor import colored
+#from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -19,13 +19,19 @@ class KWayLogisticWrapper(nn.Module):
         self.model = parent_model
     
     def forward(self, x, **kwargs):
-        if kwargs.has_key('softmax'):
+        if 'softmax' in kwargs:
             del kwargs['softmax']
         model_output = self.model(x, softmax=False, **kwargs)
         return model_output
     
     def preferred_name(self):
         return self.model.__class__.__name__
+
+    def get_info(self,args):
+        return self.model.get_info(args)
+
+    def get_output_device(self):
+        return self.model.get_output_device()
 
     def output_size(self):
         return self.model.output_size()
@@ -68,12 +74,12 @@ class LogisticSVM(ScoreSVM):
         if not path.isfile(best_h_path):      
             raise NotImplementedError("Please use setup_model to pretrain the networks first!")
         else:
-            print(colored('Loading H1 model from %s'%best_h_path, 'red'))
+            print('Loading H1 model from %s'%best_h_path)
             config.model.load_state_dict(torch.load(best_h_path))
         
         trainer.run_epoch(0, phase='all')
         test_average_acc = config.logger.get_measure('all_accuracy').mean_epoch(epoch=0)
-        print("All average accuracy %s"%colored('%.4f%%'%(test_average_acc*100), 'red'))
+        print("All average accuracy %s"%(test_average_acc*100))
 
         self.base_model = config.model
         self.base_model.eval()
