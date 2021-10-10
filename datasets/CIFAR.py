@@ -61,9 +61,6 @@ class CIFAR10(AbstractDomainInterface):
                                    transforms.ToTensor(),                                   
                                    ])
 
-    def get_num_classes(self):
-        return 10
-
 class CIFAR100(AbstractDomainInterface):
     """
         CIFAR100: 50,000 train + 10,000 test. (3x32x32)
@@ -118,14 +115,14 @@ class CIFAR100(AbstractDomainInterface):
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
         target_indices = self.D2_valid_ind
-        if D1.name in self.filter_rules:
+        if self.filter_rules.has_key(D1.name):
             target_indices = filter_indices(self.ds_train, target_indices, self.filter_rules[D1.name])
         return SubDataset(self.name, self.ds_train, target_indices, label=1, transform=D1.conformity_transform())
 
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
         target_indices = self.D2_test_ind
-        if D1.name in self.filter_rules:
+        if self.filter_rules.has_key(D1.name):
             target_indices = filter_indices(self.ds_test, target_indices, self.filter_rules[D1.name])
         return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
 
@@ -134,7 +131,4 @@ class CIFAR100(AbstractDomainInterface):
                                    transforms.ToPILImage(),
                                    transforms.Resize((32, 32)),
                                    transforms.ToTensor(),                                   
-                                   ])
-    
-    def get_num_classes(self):
-        return 100
+                                   ])                               
