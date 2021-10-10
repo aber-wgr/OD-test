@@ -108,21 +108,6 @@ class AbstractDomainInterface(object):
     def get_D1_test(self):
         raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
 
-    def get_train_sampler(self):
-        return None
-
-    def calculate_D1_weighting(self):
-        train_set = self.get_D1_train()
-        nc = self.get_num_classes()
-        count = [0] * nc                                                      
-        for item in train_set:                                                         
-            count[item[1]] += 1                                                     
-        self.train_class_weight = [0.] * nc                                      
-        for i in range(nc):                                                   
-            self.train_class_weight[i] = 1.0/float(count[i])
-
-        return self.train_class_weight
-
     """
         D2's are used for the validation and target datasets.
         They are only used in validation (stage 2) and test (stage 3).
@@ -135,22 +120,6 @@ class AbstractDomainInterface(object):
         raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))    
     
     """
-        This indicates the expected size of images in this dataset.
-    """
-    def get_D1_scale(self):
-        ds = get_D1_valid()
-        m, _ = ds[0]
-        return (im.size(0), im.size(1), im.size(2))
-
-    def get_D2_scale(self,D1):
-        other_ds = D1.get_D1_valid()
-        m, _ = other_ds[0]
-        return (im.size(0), im.size(1), im.size(2))
-
-    def get_num_classes(self):
-        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
-        
-    """
         This is evaluated through the lens of D2.
         Is d1 compatible with this d2?
         For Half-Classes, D1==D2, but they are still compatible because the
@@ -159,7 +128,7 @@ class AbstractDomainInterface(object):
     def is_compatible(self, D1):
         import global_vars as Global
         
-        if self.name in Global.d2_compatiblity:
+        if Global.d2_compatiblity.has_key(self.name):
             return D1.name in Global.d2_compatiblity[self.name]
         else:
             raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
