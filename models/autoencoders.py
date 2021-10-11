@@ -6,6 +6,8 @@ import math
 
 from pytorch_wavelets import DWTForward, DWTInverse
 
+import torchinfo
+
 """
     The VAE code is based on
     https://github.com/pytorch/examples/blob/master/vae/main.py
@@ -81,11 +83,13 @@ class Generic_AE(nn.Module):
     def encode(self, x):
         n_samples = x.size(0)
         code = self.encoder(x)
+        print("code shape:"+str(code.shape))
         out = code.view(n_samples, -1) # flatten to vectors.
         return out
 
     def forward(self, x, sigmoid=False):
         enc = self.encoder(x)
+        print("code shape:"+str(enc.shape))
         dec = self.decoder(enc)
         if sigmoid or self.default_sigmoid:
             sig = nn.Sigmoid()
@@ -154,7 +158,7 @@ class VAE_Loss(nn.Module):
 
 # Wavelet filtered AE model
 class Generic_WAE(nn.Module):
-    def __init__(self, dims, levels=3, filter='db3', n_hidden=256, linear=0, split_size=0):
+    def __init__(self, dims, levels=3, filter='db3', n_hidden=256, depth=5, freq_linear=0, encoding_ratio = 0.5, split_size=0):
         assert len(dims) == 3, 'Please specify 3 values for dims'
         super(Generic_WAE, self).__init__()
 
@@ -173,42 +177,109 @@ class Generic_WAE(nn.Module):
         self.levels = levels
         self.channels = dims[0]
 
+        self.encoding_ratio = encoding_ratio
+
         self.start_size = dims
         self.end_size = self.calc_size_at_level(dims,levels)
-        # we have (C,H,W). We end up with 4 maps (see below) so the input size to the linear layers is 4*C*H*W (per input)
-        self.flat_size = 4 * self.end_size[0] * self.end_size[1] * self.end_size[2]
+        # we are splitting our end size here so we have 1 * (C,H,W) and 3 * (C,H,W) fed into the secondary segments
+        self.base_size = self.end_size[0] * self.end_size[1] * self.end_size[2]
 
-        # encoder ###########################################
-        modules=[]
+        # split encoder ###########################################
+        lowpass_modules=[]
+        frequency_modules=[]
 
-        if(linear>0):
-            modules.append(nn.Linear(self.flat_size, linear))
-            modules.append(nonLin())
+        frequency_hidden = int(n_hidden * self.encoding_ratio)
+        lowpass_hidden = n_hidden - frequency_hidden
 
-            modules.append(nn.Linear(linear,n_hidden))
-            modules.append(nonLin())
+        if(freq_linear>0):
+            frequency_modules.append(nn.Linear(self.base_size * 3, freq_linear))
+            frequency_modules.append(nonLin())
+
+            frequency_modules.append(nn.Linear(freq_linear, frequency_hidden))
+            frequency_modules.append(nonLin())
         else:
-            modules.append(nn.Linear(self.flat_size, n_hidden))
-            modules.append(nonLin())
+            frequency_modules.append(nn.Linear(self.base_size * 3, frequency_hidden))
+            frequency_modules.append(nonLin())
 
-        self.encoder = nn.Sequential(*modules)
+        self.frequency_encoder = nn.Sequential(*frequency_modules)
 
-        # decoder ###########################################
-        modules = []
+        depth = 5
+
+        kernel_size = 3
+        all_channels = []
+        current_channels = 8
+        max_channels = 32
+        self.default_sigmoid = False
+        max_pool_layers = [i%2==0 for i in range(depth)]
+        remainder_layers = []
+        self.netid = 'max.%d.d.%d.nH.%d'%(max_channels, depth, n_hidden)
+        pad_py3 = (int)((kernel_size-1)/2)
+
+        
+        in_channels = self.end_size[0]
+        print("encoder in_channels:" + str(in_channels))
+        in_spatial_size = self.end_size[1]
+        for i in range(depth):
+            lowpass_modules.append(nn.Conv2d(in_channels, current_channels, kernel_size=kernel_size, padding=pad_py3))
+            lowpass_modules.append(nn.BatchNorm2d(current_channels))
+            lowpass_modules.append(nonLin())
+            in_channels = current_channels
+            all_channels.append(current_channels)
+            if max_pool_layers[i]:
+                lowpass_modules.append(nn.MaxPool2d(2))
+                current_channels = min(current_channels * 2, max_channels)
+                remainder_layers.append(in_spatial_size % 2)
+                in_spatial_size = math.floor(in_spatial_size/2)
+        # Final layer
+        lowpass_modules.append(nn.Conv2d(in_channels, lowpass_hidden, kernel_size=kernel_size, padding=pad_py3))
+        lowpass_modules.append(nn.BatchNorm2d(lowpass_hidden))
+        lowpass_modules.append(nonLin())
+
+        self.lowpass_encoder = nn.Sequential(*lowpass_modules)
+
+        torchinfo.summary(self.lowpass_encoder, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(64, self.end_size[0], self.end_size[1], self.end_size[2]))
+
+        # split decoder ###########################################
+        lowpass_modules=[]
+        frequency_modules=[]
 
         # in reverse - start with n_hidden and go to end_size
-
-        if(linear>0):
-            modules.append(nn.Linear(n_hidden,linear))
-            modules.append(nonLin())
-
-            modules.append(nn.Linear(linear,self.flat_size))
-            modules.append(nonLin())
-        else:
-            modules.append(nn.Linear(n_hidden, self.flat_size))
-            modules.append(nonLin())
         
-        self.decoder = nn.Sequential(*modules)
+        if(freq_linear>0):
+            frequency_modules.append(nn.Linear(frequency_hidden, freq_linear))
+            frequency_modules.append(nonLin())
+
+            frequency_modules.append(nn.Linear(freq_linear, self.base_size * 3))
+            frequency_modules.append(nonLin())
+        else:
+            frequency_modules.append(nn.Linear(frequency_hidden, self.base_size * 3))
+            frequency_modules.append(nonLin())
+
+        self.frequency_decoder = nn.Sequential(*frequency_modules)
+
+        lowpass_modules = []
+        in_channels = lowpass_hidden
+        print("decoder in_channels:" + str(in_channels))
+        current_index = len(all_channels)-1
+        r_ind = len(remainder_layers)-1
+        for i in range(depth):
+            lowpass_modules.append(nn.Conv2d(in_channels, all_channels[current_index], kernel_size=kernel_size, padding=pad_py3))
+            lowpass_modules.append(nn.BatchNorm2d(all_channels[current_index]))
+            lowpass_modules.append(nonLin())
+            if max_pool_layers[i]:
+                lowpass_modules.append(nn.Upsample(scale_factor=2, mode='nearest'))
+                if remainder_layers[r_ind] > 0:
+                    lowpass_modules.append(nn.ZeroPad2d((1,0,1,0)))
+                r_ind -= 1 
+
+            in_channels = all_channels[current_index]
+            current_index -= 1
+        # Final layer
+        lowpass_modules.append(nn.Conv2d(in_channels, self.end_size[0], kernel_size=kernel_size, padding=pad_py3))
+        self.lowpass_decoder = nn.Sequential(*lowpass_modules)
+
+        torchinfo.summary(self.lowpass_decoder, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(64, lowpass_hidden))
+
 
     def encode(self, x):
         n_samples = x.size(0)
@@ -217,22 +288,34 @@ class Generic_WAE(nn.Module):
         #Yl contains the approximated version(LL). Yh contains progressively smaller versions of horizontal(LH), vertical(HL) and diagonal(HH) detail tensors.
         #We take the last version from the stack, so reduce the detail by increasing 'levels', which should also reduce size of Yl
         #shape of Yl is (N,C,H,W), while shape of Yh[-1] (lat detail layer) is (N,C,3,H,W). We add these into (N,C,4,H,W) and flatten it to feed into the FC layer
-        Yd = Yh[-1]
-        Yl = torch.unsqueeze(Yl,2) # change to (N,C,1,H,W)
-        Yd = torch.cat((Yd,Yl),2) # add together into (N,C,4,H,W)
-        Yy = torch.flatten(Yd, start_dim=1) # flatten to (N,C*4*H*W)
+        Yd = Yh[-1] # (N,C,3,H,W)
+        Yy = torch.flatten(Yd, start_dim=1) # flatten to (N,C*3*H*W)
 
-        code = self.encoder(Yy) # encode to (N,n_hidden)
+        lowpass_code = self.lowpass_encoder(Yl) # (N,lowpass_hidden)
+        lowpass_code = torch.flatten(lowpass_code,1)
+        print("lowpass_code shape:" + str(lowpass_code.shape))
+        frequency_code = self.frequency_encoder(Yy) # (N,frequency_hidden)
+        print("frequency_code shape:" + str(frequency_code.shape))
+        code = torch.cat((lowpass_code, frequency_code),1) # (N,n_hidden)
+        print("encoding shape:"+ str(code.shape))
+
         out = code.view(n_samples, -1) # flatten to vectors.
+        print("final shape:"+ str(out.shape))
         return out
 
     def decode(self,x):
         # should start with N vectors of n_hidden encodings
         n_samples = x.size(0)
-        Yy = self.decoder(x) # comes out as (N,C*4*H*W)
-        Yd = torch.reshape(Yy ,(n_samples, self.channels, 4, self.end_size[1], self.end_size[2])) # reshape to (N,C,4,H,W)
-        Yd,Yl = torch.split(Yd,[3,1],dim=2) # split apart into (N,C,3,H,W) (Yd) and (N,C,1,H,W) (Yl)
-        Yl = torch.squeeze(Yl,2) # resqueeze Yl to (N,C,H,W)
+        n_hidden = x.size(1)
+
+        frequency_hidden = int(n_hidden * self.encoding_ratio)
+        lowpass_hidden = n_hidden - frequency_hidden
+
+        xl,xy = torch.split(x,lowpass_hidden,1) # split to (N,lowpass_hidden) and (N,frequency_hidden)
+
+        Yd = self.frequency_decoder(xy) # comes out as (N,C*3*H*W)
+        Yl = self.lowpass_decoder(xl) # comes out as (N,C,H,W)
+
         Yh = self.build_coeff_at_detail_level(self.start_size, n_samples, Yd, self.levels) # build estimated coefficient tree
 
         #now we have Yl and an estimated Yh, so feed that back into the DWT
