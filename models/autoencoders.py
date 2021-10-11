@@ -38,6 +38,7 @@ class Generic_AE(nn.Module):
         # encoder ###########################################
         modules = []
         in_channels = dims[0]
+        print("encoder in_channels:" + str(in_channels))
         in_spatial_size = dims[1]
         for i in range(depth):
             modules.append(nn.Conv2d(in_channels, current_channels, kernel_size=kernel_size, padding=pad_py3))
@@ -60,6 +61,7 @@ class Generic_AE(nn.Module):
         # decoder ###########################################
         modules = []
         in_channels = n_hidden
+        print("decoder in_channels:" + str(in_channels))
         if self.__class__ == Generic_VAE:
             in_channels = (int)(in_channels / 2)
         current_index = len(all_channels)-1
@@ -278,7 +280,7 @@ class Generic_WAE(nn.Module):
         lowpass_modules.append(nn.Conv2d(in_channels, self.end_size[0], kernel_size=kernel_size, padding=pad_py3))
         self.lowpass_decoder = nn.Sequential(*lowpass_modules)
 
-        torchinfo.summary(self.lowpass_decoder, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(64, lowpass_hidden))
+        torchinfo.summary(self.lowpass_decoder, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(64, lowpass_hidden,1,1))
 
 
     def encode(self, x):
@@ -299,12 +301,12 @@ class Generic_WAE(nn.Module):
         code = torch.cat((lowpass_code, frequency_code),1) # (N,n_hidden)
         print("encoding shape:"+ str(code.shape))
 
-        out = code.view(n_samples, -1) # flatten to vectors.
+        out = code[:,:,None,None]
         print("final shape:"+ str(out.shape))
         return out
 
     def decode(self,x):
-        # should start with N vectors of n_hidden encodings
+        # input will be in shape (N,n_hidden,1,1)
         n_samples = x.size(0)
         n_hidden = x.size(1)
 
@@ -312,8 +314,10 @@ class Generic_WAE(nn.Module):
         lowpass_hidden = n_hidden - frequency_hidden
 
         xl,xy = torch.split(x,lowpass_hidden,1) # split to (N,lowpass_hidden) and (N,frequency_hidden)
+        xy = torch.squeeze(xy)
 
         Yd = self.frequency_decoder(xy) # comes out as (N,C*3*H*W)
+        Yd = torch.reshape(Yd,(n_samples,self.end_size[0],3,self.end_size[1],self.end_size[2])) # unflatten to (N,C,3,H,W)
         Yl = self.lowpass_decoder(xl) # comes out as (N,C,H,W)
 
         Yh = self.build_coeff_at_detail_level(self.start_size, n_samples, Yd, self.levels) # build estimated coefficient tree

@@ -34,7 +34,7 @@ def get_ae_config(args, model, domain, BCE_Loss):
     weights = [0] * len(d1_set)                                              
     for idx, val in enumerate(d1_set):                                          
         weights[idx] = class_weights[val[1]]
-
+    
     train_sampler = WeightedRandomSampler(weights, len(train_ds),replacement=False)
 
     # Initialize the multi-threaded loaders.
@@ -282,11 +282,11 @@ def get_wae_config(args, model, domain, BCE_Loss):
         print("Mirror augmenting %s"%domain.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds
-
+    
     #recalculate weighting
     class_weights = domain.calculate_D1_weighting()
     d1_set = train_ds
-    weights = [0] * len(d1_set)                                              
+    weights = [0] * len(d1_set)   
     for idx, val in enumerate(d1_set):                                          
         weights[idx] = class_weights[val[1]]
 

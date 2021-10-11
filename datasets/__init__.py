@@ -115,12 +115,12 @@ class AbstractDomainInterface(object):
         train_set = self.get_D1_train()
         nc = self.get_num_classes()
         count = [0] * nc                                                      
-        for item in train_set:                                                         
-            count[item[1]] += 1                                                     
+        for item in train_set:
+            idx = item[1]
+            count[idx] = count[idx] + 1
         self.train_class_weight = [0.] * nc                                      
         for i in range(nc):                                                   
             self.train_class_weight[i] = 1.0/float(count[i])
-
         return self.train_class_weight
 
     """
