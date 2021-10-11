@@ -38,7 +38,7 @@ class Generic_AE(nn.Module):
         # encoder ###########################################
         modules = []
         in_channels = dims[0]
-        print("encoder in_channels:" + str(in_channels))
+        #print("encoder in_channels:" + str(in_channels))
         in_spatial_size = dims[1]
         for i in range(depth):
             modules.append(nn.Conv2d(in_channels, current_channels, kernel_size=kernel_size, padding=pad_py3))
@@ -61,7 +61,7 @@ class Generic_AE(nn.Module):
         # decoder ###########################################
         modules = []
         in_channels = n_hidden
-        print("decoder in_channels:" + str(in_channels))
+        #print("decoder in_channels:" + str(in_channels))
         if self.__class__ == Generic_VAE:
             in_channels = (int)(in_channels / 2)
         current_index = len(all_channels)-1
@@ -85,13 +85,13 @@ class Generic_AE(nn.Module):
     def encode(self, x):
         n_samples = x.size(0)
         code = self.encoder(x)
-        print("code shape:"+str(code.shape))
+        #print("code shape:"+str(code.shape))
         out = code.view(n_samples, -1) # flatten to vectors.
         return out
 
     def forward(self, x, sigmoid=False):
         enc = self.encoder(x)
-        print("code shape:"+str(enc.shape))
+        #print("code shape:"+str(enc.shape))
         dec = self.decoder(enc)
         if sigmoid or self.default_sigmoid:
             sig = nn.Sigmoid()
@@ -219,7 +219,7 @@ class Generic_WAE(nn.Module):
 
         
         in_channels = self.end_size[0]
-        print("encoder in_channels:" + str(in_channels))
+        #print("encoder in_channels:" + str(in_channels))
         in_spatial_size = self.end_size[1]
         for i in range(depth):
             lowpass_modules.append(nn.Conv2d(in_channels, current_channels, kernel_size=kernel_size, padding=pad_py3))
@@ -261,7 +261,7 @@ class Generic_WAE(nn.Module):
 
         lowpass_modules = []
         in_channels = lowpass_hidden
-        print("decoder in_channels:" + str(in_channels))
+        #print("decoder in_channels:" + str(in_channels))
         current_index = len(all_channels)-1
         r_ind = len(remainder_layers)-1
         for i in range(depth):
@@ -295,14 +295,14 @@ class Generic_WAE(nn.Module):
 
         lowpass_code = self.lowpass_encoder(Yl) # (N,lowpass_hidden)
         lowpass_code = torch.flatten(lowpass_code,1)
-        print("lowpass_code shape:" + str(lowpass_code.shape))
+        #print("lowpass_code shape:" + str(lowpass_code.shape))
         frequency_code = self.frequency_encoder(Yy) # (N,frequency_hidden)
-        print("frequency_code shape:" + str(frequency_code.shape))
+        #print("frequency_code shape:" + str(frequency_code.shape))
         code = torch.cat((lowpass_code, frequency_code),1) # (N,n_hidden)
-        print("encoding shape:"+ str(code.shape))
+        #print("encoding shape:"+ str(code.shape))
 
         out = code[:,:,None,None]
-        print("final shape:"+ str(out.shape))
+        #print("final shape:"+ str(out.shape))
         return out
 
     def decode(self,x):
