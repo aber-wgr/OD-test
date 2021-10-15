@@ -116,10 +116,10 @@ dataset_reference_vaes = {
 dataset_reference_waes = {
     'MNIST':              [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', depth=8, n_hidden=96)],
     'FashionMNIST':       [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', depth=8, n_hidden=96)],
-    'CIFAR10':            [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=3, filter='db3', depth=8, n_hidden=256)],
-    'CIFAR100':           [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=3, filter='db3', depth=8, n_hidden=256)],
-    'STL10':              [ModelFactory(AES.Generic_WAE, dims=(3, 96, 96), levels=4, filter='db3', depth=10, n_hidden=512)],
-    'TinyImagenet':       [ModelFactory(AES.Generic_WAE, dims=(3, 64, 64), levels=3, filter='db3', depth=10, n_hidden=512)],
+    'CIFAR10':            [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=2, filter='db3', depth=8, n_hidden=128)],
+    'CIFAR100':           [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=2, filter='db3', depth=8, n_hidden=128)],
+    'STL10':              [ModelFactory(AES.Generic_WAE, dims=(3, 96, 96), levels=3, filter='db3', depth=10, n_hidden=256)],
+    'TinyImagenet':       [ModelFactory(AES.Generic_WAE, dims=(3, 64, 64), levels=3, filter='db3', depth=10, n_hidden=256)],
 }
 
 dataset_reference_pcnns = {
