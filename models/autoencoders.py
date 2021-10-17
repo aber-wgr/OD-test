@@ -205,7 +205,7 @@ class Generic_WAE(nn.Module):
 
         self.frequency_encoder = nn.Sequential(*frequency_modules)
 
-        depth = 5
+        #depth = 5
 
         kernel_size = 3
         all_channels = []
