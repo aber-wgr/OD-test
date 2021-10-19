@@ -320,7 +320,7 @@ class Generic_WAE(nn.Module):
         Yd = torch.reshape(Yd,(n_samples,self.end_size[0],3,self.end_size[1],self.end_size[2])) # unflatten to (N,C,3,H,W)
         Yl = self.lowpass_decoder(xl) # comes out as (N,C,H,W)
 
-        Yh = self.build_coeff_at_detail_level(self.start_size, n_samples, Yd, self.levels) # build estimated coefficient tree
+        Yh = self.build_coeff_at_detail_level(self.start_size, n_samples, Yd, self.levels,True) # build estimated coefficient tree all zeros
 
         #now we have Yl and an estimated Yh, so feed that back into the DWT
         Xd = self.devolver((Yl,Yh))
@@ -347,7 +347,7 @@ class Generic_WAE(nn.Module):
             out[-2] = H
         return tuple(out)
 
-    def build_coeff_at_detail_level(self,input_size,samples,input_coeff,level):
+    def build_coeff_at_detail_level(self,input_size,samples,input_coeff,level,force_zero=False):
         out = []
 
         #we want a list of tensors. Input size is original input size - ie, original image size. We expand this to include batch, channel and filter
@@ -356,7 +356,7 @@ class Generic_WAE(nn.Module):
         base_size = torch.Size((samples,self.channels,3,input_size[1],input_size[2]))
 
         for i in range(level):
-            if(i==level-1):
+            if(i==level-1) and not force_zero:
                 out.append(input_coeff)
             else:
                 size = self.calc_size_at_level(base_size,i+1)
