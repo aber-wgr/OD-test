@@ -296,10 +296,11 @@ class Generic_WAE(nn.Module):
         lowpass_code = self.lowpass_encoder(Yl) # (N,lowpass_hidden)
         lowpass_code = torch.flatten(lowpass_code,1)
         #print("lowpass_code shape:" + str(lowpass_code.shape))
-        frequency_code = self.frequency_encoder(Yy) # (N,frequency_hidden)
+        #frequency_code = self.frequency_encoder(Yy) # (N,frequency_hidden)
         #print("frequency_code shape:" + str(frequency_code.shape))
-        code = torch.cat((lowpass_code, frequency_code),1) # (N,n_hidden)
+        #code = torch.cat((lowpass_code, frequency_code),1) # (N,n_hidden)
         #print("encoding shape:"+ str(code.shape))
+        code = lowpass_code
 
         out = code[:,:,None,None]
         #print("final shape:"+ str(out.shape))
@@ -313,14 +314,15 @@ class Generic_WAE(nn.Module):
         frequency_hidden = int(n_hidden * self.encoding_ratio)
         lowpass_hidden = n_hidden - frequency_hidden
 
-        xl,xy = torch.split(x,lowpass_hidden,1) # split to (N,lowpass_hidden) and (N,frequency_hidden)
-        xy = torch.squeeze(xy)
+        #xl,xy = torch.split(x,lowpass_hidden,1) # split to (N,lowpass_hidden) and (N,frequency_hidden)
+        xl = x
+#        xy = torch.squeeze(xy)
 
-        Yd = self.frequency_decoder(xy) # comes out as (N,C*3*H*W)
-        Yd = torch.reshape(Yd,(n_samples,self.end_size[0],3,self.end_size[1],self.end_size[2])) # unflatten to (N,C,3,H,W)
+#        Yd = self.frequency_decoder(xy) # comes out as (N,C*3*H*W)
+#        Yd = torch.reshape(Yd,(n_samples,self.end_size[0],3,self.end_size[1],self.end_size[2])) # unflatten to (N,C,3,H,W)
         Yl = self.lowpass_decoder(xl) # comes out as (N,C,H,W)
 
-        Yh = self.build_coeff_at_detail_level(self.start_size, n_samples, Yd, self.levels,True) # build estimated coefficient tree all zeros
+        Yh = self.build_coeff_at_detail_level(self.start_size, n_samples, None, self.levels,True) # build estimated coefficient tree all zeros
 
         #now we have Yl and an estimated Yh, so feed that back into the DWT
         Xd = self.devolver((Yl,Yh))
