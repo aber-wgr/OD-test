@@ -114,8 +114,8 @@ dataset_reference_vaes = {
 }
 
 dataset_reference_waes = {
-    'MNIST':              [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', depth=4, n_hidden=96, freq_linear=64)],      # lowest level (1, 10, 10)
-    'FashionMNIST':       [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', depth=4, n_hidden=96, freq_linear=64)],      # lowest level (1, 10, 10)
+    'MNIST':              [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', depth=5, n_hidden=96, freq_linear=64)],      # lowest level (1, 10, 10)
+    'FashionMNIST':       [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', depth=5, n_hidden=96, freq_linear=64)],      # lowest level (1, 10, 10)
     'CIFAR10':            [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=2, filter='db3', depth=5, n_hidden=128, freq_linear=64)],     # lowest level (3, 11, 11)
     'CIFAR100':           [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=2, filter='db3', depth=5, n_hidden=128, freq_linear=64)],     # lowest level (3, 11, 11)
     'STL10':              [ModelFactory(AES.Generic_WAE, dims=(3, 96, 96), levels=3, filter='db3', depth=7, n_hidden=256, freq_linear=128)],    # lowest level (3, 16, 16)
