@@ -1,6 +1,9 @@
+from __future__ import print_function
 import errno
 
 import timeit
+from tqdm import tqdm
+from termcolor import colored
 
 import torch
 import torch.nn.functional as F
@@ -18,6 +21,8 @@ class IterativeTrainer(object):
         self.config = config
         self.args   = args
         self.device = args.device
+        if config.visualize:
+            self.visdom = Visdom(ipv6=False, env='(%s)-%s:%s'%(args.hostname, args.experiment_id, config.name))
         # Set the default behaviours if not set.
         defaults = {
             'classification': False,
@@ -25,11 +30,12 @@ class IterativeTrainer(object):
             'autoencoder_target': False,
             'autoencoder_class': False,
             'stochastic_gradient': True,
+            'visualize': True,
             'sigmoid_viz': True,
         }
-        for key, value in defaults.items():
+        for key, value in defaults.iteritems():
             if not hasattr(self.config, key):
-                print('Setting default value %s to %s'%(key, value))
+                print(colored('Setting default value %s to %s'%(key, value), 'red'))
                 setattr(self.config, key, value)
     
     def run_epoch(self, epoch, phase='train'):
@@ -38,9 +44,10 @@ class IterativeTrainer(object):
         dataset     = config['dataset']
         backward    = config['backward']
         phase_name  = phase
-        print("Doing %s"%phase)
+        print("Doing %s"%colored(phase, 'green'))
 
         model       = self.config.model
+        visualize   = self.config.visualize
         criterion   = self.config.criterion
         optimizer   = self.config.optim
         logger      = self.config.logger
@@ -62,6 +69,7 @@ class IterativeTrainer(object):
             torch.set_grad_enabled(False)
 
         start_time = timeit.default_timer()
+        last_viz_update = start_time
 
         # For full gradient optimization we need to rescale the loss
         # to calculate the gradient correctly.
@@ -69,25 +77,30 @@ class IterativeTrainer(object):
         if not stochastic:
             loss_scaler = 1./len(dataset.dataset)
 
-        if backward and not stochastic:
-            optimizer.zero_grad()
+        try:
+            # TQDM sometimes throws IOError exceptions when you
+            # try to close it. We ignore those exceptions.
+            with tqdm(total=len(dataset)) as pbar:
+                if backward and not stochastic:
+                    optimizer.zero_grad()
 
-        for i, (image, label) in enumerate(dataset):
-            if backward and stochastic:
-                optimizer.zero_grad()
+                for i, (image, label) in enumerate(dataset):
+                    pbar.update()
+                    if backward and stochastic:
+                        optimizer.zero_grad()
 
-            # Get and prepare data.
-            input, target, data_indices = image, None, None
-            if torch.typename(label) == 'list':
-                assert len(label) == 2, 'There should be two entries in the label'
-                # Need to unpack the label. This is for when the data provider
-                # has the cached flag enabled, therefore the y is now (y, idx).
-                target, data_indices = label
-            else:
-                target = label
+                    # Get and prepare data.
+                    input, target, data_indices = image, None, None
+                    if torch.typename(label) == 'list':
+                        assert len(label) == 2, 'There should be two entries in the label'
+                        # Need to unpack the label. This is for when the data provider
+                        # has the cached flag enabled, therefore the y is now (y, idx).
+                        target, data_indices = label
+                    else:
+                        target = label
                     
-            if self.config.autoencoder_target:
-                target = input.clone()
+                    if self.config.autoencoder_target:
+                        target = input.clone()
                     
             if self.config.cast_float_label:
                 target = target.float().unsqueeze(1)
@@ -134,40 +147,11 @@ class IterativeTrainer(object):
                 if stochastic:
                     loss.backward()
                     optimizer.step()
-                else:
-                    nscaler = loss_scaler
-                    if criterion.size_average:
-                        nscaler = nscaler * len(input)
-                    loss2 = loss * nscaler
-                    loss2.backward()
-
-            criterion.size_average = True
-            # Compute various measure. Can be safely skipped.
-            if not backward or not stochastic:
-                if criterion.size_average:
-                    loss.data.mul_(len(input))
-            logger.log('%s_loss'%phase_name, loss.item(), epoch, i)
-            message = '%s Batch loss %.3f'%(phase_name, loss.item())
-
-            if classification:
-                pred = []
-                if prediction.size(1) == 1:
-                    # For binary classification, we do this to make the
-                    # prediction code consistent with the max.
-                    pred = model.classify(prediction)
-                else:
-                    pred = prediction.max(1)[1]
-                if stochastic and backward:
-                    acc = (pred == target.long()).float().view(-1).mean().item()
-                    logger.log('%s_accuracy'%phase_name, acc, epoch, i)
-                else:
-                    acc = (pred == target.long()).float().view(-1).sum().item()
-                    logger.log('%s_accuracy'%phase_name, acc, epoch, i)
-                    acc = acc/target.numel()
-                message = '%s Accuracy %.2f'%(message, acc)
-
-            if backward and not stochastic:
-                optimizer.step()
+        except IOError, e:
+            if e.errno != errno.EINTR:
+                raise
+            else:
+                print(colored("Problem averted :D", 'green'))
 
         if not backward or not stochastic:
             logger.get_measure('%s_loss'%phase_name).measure_normalizer = len(dataset.dataset)

@@ -51,7 +51,7 @@ for exp_id in exp_list:
                 sys.exit(1)
             else:
                 results.append(r)
-                if r[0] in method_count:
+                if method_count.has_key(r[0]):
                     method_count[r[0]] += 1
                 else:
                     method_count[r[0]] = 1
@@ -69,11 +69,11 @@ else:
 print('Saving results to %s'%output_folder)
 
 total = 0
-for method, count in method_count.items():
-    print ('%25s\t%-5s'%(method, '%d'%count))
+for method, count in method_count.iteritems():
+    print ('%25s\t%-5s'%(method, colored('%d'%count, 'green')))
     total += count
-print('%s'%'-'*37)
-print('%25s\t%-5s'%('Total''%d'%total))
+print('%s'%colored('-'*37, 'red'))
+print('%25s\t%-5s'%('Total', colored('%d'%total, 'green')))
 
 torch.save(results, path.join(output_folder, 'results.pth'))
 torch.save(exp_ids, path.join(output_folder, 'ids.pth'))
