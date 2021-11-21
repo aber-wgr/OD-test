@@ -50,9 +50,13 @@ class Generic_AE(nn.Module):
                 in_spatial_size = math.floor(in_spatial_size/2)
 
         # Final layer
-        modules.append(nn.Conv2d(in_channels, n_hidden, kernel_size=kernel_size, padding=pad_py3))
-        modules.append(nn.BatchNorm2d(n_hidden))
-        modules.append(nonLin())
+        modules.append(nn.Flatten())
+        flattened_size = int(in_spatial_size*in_spatial_size*current_channels)
+        modules.append(nn.Linear(in_features=flattened_size,out_features=n_hidden))
+        
+        #modules.append(nn.Conv2d(in_channels, n_hidden, kernel_size=kernel_size, padding=pad_py3))
+        #modules.append(nn.BatchNorm2d(n_hidden))
+        #modules.append(nonLin())
         self.encoder = nn.Sequential(*modules)
 
         # decoder ###########################################
@@ -62,6 +66,10 @@ class Generic_AE(nn.Module):
             in_channels = (int)(in_channels / 2)
         current_index = len(all_channels)-1
         r_ind = len(remainder_layers)-1
+
+        modules.append(nn.Linear(in_features=n_hidden, out_features=flattened_size))
+        modules.append(nn.Unflatten(1,(flattened_size,in_spatial_size,in_spatial_size)))
+
         for i in range(depth):
             modules.append(nn.Conv2d(in_channels, all_channels[current_index], kernel_size=kernel_size, padding=pad_py3))
             modules.append(nn.BatchNorm2d(all_channels[current_index]))
