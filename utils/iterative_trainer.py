@@ -7,7 +7,11 @@ from termcolor import colored
 
 import torch
 import torch.nn.functional as F
-from visdom import Visdom
+import models as Models
+
+import matplotlib.pyplot as plt
+
+import os
 
 class IterativeTrainerConfig(object):
     pass
@@ -49,6 +53,12 @@ class IterativeTrainer(object):
         logger      = self.config.logger
         stochastic  = self.config.stochastic_gradient
         classification = self.config.classification
+
+        #print("self.config.name:" + self.config.name)
+        home_path = Models.get_ref_model_path(self.args, model.__class__.__name__, self.config.name, model_setup=True, suffix_str="CCC")
+        dump_path = os.path.join(home_path, 'dump')
+        if not os.path.isdir(dump_path):
+            os.makedirs(dump_path)
 
         # See the network to the target mode.
         if backward:
@@ -92,74 +102,50 @@ class IterativeTrainer(object):
                     if self.config.autoencoder_target:
                         target = input.clone()
                     
-                    if self.config.cast_float_label:
-                        target = target.float().unsqueeze(1)
+            if self.config.cast_float_label:
+                target = target.float().unsqueeze(1)
 
-                    input, target = input.to(self.device), target.to(self.device)
+            input, target = input.to(self.device), target.to(model.get_output_device())
 
-                    # Do a forward propagation and get the loss.
-                    prediction = None
-                    if data_indices is None:
-                        prediction = model(input)
-                    else:
-                        # Run in the cached mode. This is necessary to speed up
-                        # some of the underlying optimization procedures. It is not
-                        # always used though.
-                        prediction = model(input, indices=data_indices, group=phase_name)
+            # Do a forward propagation and get the loss.
+            prediction = None
+            if data_indices is None:
+                prediction = model(input)
+            else:
+                # Run in the cached mode. This is necessary to speed up
+                # some of the underlying optimization procedures. It is not
+                # always used though.
+                prediction = model(input, indices=data_indices, group=phase_name)
 
-                    loss = criterion(prediction, target)
+            loss = criterion(prediction, target)
 
-                    if backward:
-                        if stochastic:
-                            loss.backward()
-                            optimizer.step()
-                        else:
-                            nscaler = loss_scaler
-                            if criterion.size_average:
-                                nscaler = nscaler * len(input)
-                            loss2 = loss * nscaler
-                            loss2.backward()
+            if(self.args.dump_images):
+                # pick one from the batch and output it
+                
+                #filename = phase_name + str(i) +"_epoch" + str(epoch) + ".png"
+                #dump_file = os.path.join(dump_path,filename)
+                #self.dump_image(input[0].cpu(),dump_file,True)
 
-                    # Compute various measure. Can be safely skipped.
-                    if not backward or not stochastic:
-                        if criterion.size_average:
-                            loss.data.mul_(len(input))
-                    logger.log('%s_loss'%phase_name, loss.item(), epoch, i)
-                    message = '%s Batch loss %.3f'%(phase_name, loss.item())
+                if self.config.autoencoder_target:
 
-                    if classification:
-                        pred = []
-                        if prediction.size(1) == 1:
-                            # For binary classification, we do this to make the
-                            # prediction code consistent with the max.
-                            pred = model.classify(prediction)
-                        else:
-                            pred = prediction.max(1)[1]
-                        if stochastic and backward:
-                            acc = (pred == target.long()).float().view(-1).mean().item()
-                            logger.log('%s_accuracy'%phase_name, acc, epoch, i)
-                        else:
-                            acc = (pred == target.long()).float().view(-1).sum().item()
-                            logger.log('%s_accuracy'%phase_name, acc, epoch, i)
-                            acc = acc/target.numel()
-                        message = '%s Accuracy %.2f'%(message, acc)
+                    home_path = Models.get_ref_model_path(self.args, model.__class__.__name__, self.config.name, model_setup=True, suffix_str="CCC")
+                    dump_path = os.path.join(home_path, 'dump')
+                    if not os.path.isdir(dump_path):
+                        os.makedirs(dump_path)
 
-                    pbar.set_description(message)
+                    filename = phase_name + str(i) +"_epoch" + str(epoch) + ".png"
+                    dump_file = os.path.join(dump_path,filename)
+                    self.dump_image(input[0].cpu(),dump_file,True)
 
-                    if visualize and i % 20 == 0 and (timeit.default_timer() - last_viz_update > 5):
-                        # we don't want to update too quickly. visdom breaks!
-                        logger.visualize_epoch('%s_loss'%phase_name, self.visdom)
-                        self.visdom.images(image.numpy(), win='in_images')
-                        if self.config.autoencoder_target and prediction.size(1) in [1, 3]:
-                            viz_ten = None
-                            if self.config.sigmoid_viz:
-                                viz_ten = F.sigmoid(prediction).cpu().detach().numpy()
-                            else:
-                                viz_ten = prediction.cpu().detach().numpy()
-                            self.visdom.images(viz_ten, win='out_images')
-                        last_viz_update = timeit.default_timer()
+                    # if this is an autoencoder run, also output the recreation for comparison
+                    filename = phase_name + str(i) + "_epoch" + str(epoch) + "_target.png"
+                    dump_file = os.path.join(dump_path,filename)
+                    self.dump_image(prediction[0].cpu(),dump_file,True)
 
-                if backward and not stochastic:
+
+            if backward:
+                if stochastic:
+                    loss.backward()
                     optimizer.step()
         except IOError, e:
             if e.errno != errno.EINTR:
@@ -174,3 +160,12 @@ class IterativeTrainer(object):
 
         elapsed = timeit.default_timer() - start_time
         print('  %s Epoch %d in %.2fs' %(phase_name, epoch, elapsed))
+
+    def dump_image(self,imageTensor,path,force_grayscale=False):
+        image_n = imageTensor.permute(1,2,0)
+        plt.figure(figsize=(4,4))
+        plt.imshow(image_n.detach())
+        if force_grayscale:
+            plt.gray()
+        plt.savefig(path)
+        plt.close()
