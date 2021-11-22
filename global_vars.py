@@ -59,13 +59,13 @@ import models.pixelcnn.model as PCNN
     For instance, VGGs are all 0 and Resnets are all 1.
 """
 dataset_reference_classifiers = {
-    'MNIST':                  [CLS.MNIST_VGG,         CLS.MNIST_Resnet],
-    'FashionMNIST':           [CLS.MNIST_VGG,         CLS.MNIST_Resnet],
-    'CIFAR10':                [CLS.CIFAR10_VGG,       CLS.CIFAR10_Resnet],
-    'CIFAR100':               [CLS.CIFAR100_VGG,      CLS.CIFAR100_Resnet],
-    'STL10':                  [CLS.STL10_VGG,         CLS.STL10_Resnet],
-    'TinyImagenet':           [CLS.TinyImagenet_VGG,  CLS.TinyImagenet_Resnet],
-}
+
+    'MNIST':                  [ModelFactory(CLS.Scaled_VGG, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(1,28,28), classes=10, epochs=60)],
+    'FashionMNIST':           [ModelFactory(CLS.Scaled_VGG, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(1,28,28), classes=10, epochs=60)],
+    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3,32,32), classes=10, epochs=60)],
+    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3,32,32), classes=100, epochs=60)],
+    'STL10':                  [ModelFactory(CLS.Scaled_VGG, scale=(3, 96, 96), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(3, 96, 96), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3, 96, 96), classes=10, epochs=60)],
+    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG, scale=(3, 64, 64), classes=200, epochs=60), ModelFactory(CLS.Scaled_Resnet, scale=(3, 64, 64), classes=200, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3, 64, 64), classes=200, epochs=60)],
 
 class ModelFactory(object):
     def __init__(self, parent_class, **kwargs):

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os,sys,inspect
 from termcolor import colored
 
@@ -31,31 +30,36 @@ def needs_processing(args, dataset_class, models, suffix):
                 return True
     return False
 
-task_list = [
-    # The list of models,   The function that does the training,    Can I skip-test?,   suffix of the operation.
-    # The procedures that can be skip-test are the ones that we can determine
-    # whether we have done them before without instantiating the network architecture or dataset.
-    # saves quite a lot of time when possible.
-    (Global.dataset_reference_classifiers, CLSetup.train_classifier,            True, ['base']),
-    (Global.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
-    (Global.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
-    (Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
-    (Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
-    (Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
-    (Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
-]
+if __name__ == "__main__":
 
-# Do a for loop to run the training tasks.
-for task_id, (ref_list, train_func, skippable, suffix) in enumerate(task_list):
-    target_datasets = ref_list.keys()
-    print('Processing %d datasets.'%len(target_datasets))
-    for dataset in target_datasets:
-        print('Processing dataset %s with %d networks for %d-%s.'%(colored(dataset, 'green'), len(ref_list[dataset]), task_id, colored(train_func.__name__, 'blue')))
-        if skippable and not needs_processing(args, Global.all_datasets[dataset], ref_list[dataset], suffix=suffix):
-            print(colored('Skipped', 'yellow'))
-            continue
-        ds = Global.all_datasets[dataset]()
-        for model in ref_list[dataset]:
-            model = model()
-            print('Training %s'%(colored(model.__class__.__name__, 'blue')))
-            train_func(args, model, ds.get_D1_train())
+    task_list = [
+        # The list of models,   The function that does the training,    Can I skip-test?,   suffix of the operation.
+        # The procedures that can be skip-test are the ones that we can determine
+        # whether we have done them before without instantiating the network architecture or dataset.
+        # saves quite a lot of time when possible.
+        (Global.dataset_reference_classifiers, CLSetup.train_classifier,            True, ['base']),
+        #(Global.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
+        #(Global.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
+        #(Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
+        #(Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
+        #(Global.dataset_reference_waes, AESetup.train_BCE_WAE,                      False, []),
+        #(Global.dataset_reference_waes, AESetup.train_MSE_WAE,                      False, []),
+        #(Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
+        #(Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
+    ]
+
+    # Do a for loop to run the training tasks.
+    for task_id, (ref_list, train_func, skippable, suffix) in enumerate(task_list):
+        target_datasets = ref_list.keys()
+        print('Processing %d datasets.'%len(target_datasets))
+        for dataset in target_datasets:
+            print('Processing dataset %s with %d networks for %d-%s.'%(dataset, len(ref_list[dataset]), task_id, train_func.__name__))
+            if skippable and not needs_processing(args, Global.all_datasets[dataset], ref_list[dataset], suffix=suffix):
+                print('Skipped')
+                continue
+            ds = Global.all_datasets[dataset]()
+            for model_builder in ref_list[dataset]:
+                model_builder.add('split_size',(int)(args.batch_size / 4))
+                model = model_builder()
+                print('Training %s'%(model.__class__.__name__))
+                train_func(args, model, ds)
