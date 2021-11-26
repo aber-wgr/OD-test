@@ -90,12 +90,12 @@ class ModelFactory(object):
 """
 
 dataset_reference_classifiers = {
-    'MNIST':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60)],
-#    'FashionMNIST':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60)],
-#    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60)],
-#    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60)],
-#    'STL10':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=120)],
-#    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=120)],
+    'MNIST':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Densenet, scale=(1,28,28), classes=10, epochs=60)],
+    'FashionMNIST':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(1,28,28), classes=10, epochs=60), ModelFactory(CLS.Scaled_Densenet, scale=(1,28,28), classes=10, epochs=60)],
+    'CIFAR10':                [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3,32,32), classes=10, epochs=60), ModelFactory(CLS.Scaled_Densenet, scale=(3,32,32), classes=10, epochs=60)],
+    'CIFAR100':               [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_Densenet, scale=(3,32,32), classes=100, epochs=60)],
+    'STL10':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 96, 96), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3, 96, 96), classes=10, epochs=60), ModelFactory(CLS.Scaled_Densenet, scale=(3, 96, 96), classes=10, epochs=60)],
+    'TinyImagenet':           [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=60), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(3, 64, 64), classes=200, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3, 64, 64), classes=200, epochs=60), ModelFactory(CLS.Scaled_Densenet, scale=(3, 64, 64), classes=200, epochs=60)],
     'OMIDB':                  [ModelFactory(CLS.Scaled_VGG_2GPU_Pipeline, scale=(1, 256, 256), classes=1, epochs=80), ModelFactory(CLS.Scaled_Resnet_2GPU_Pipeline, scale=(1, 256, 256), classes=1, epochs=80)],
 }
 
@@ -117,6 +117,15 @@ dataset_reference_vaes = {
 #    'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
 #    'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
 #    'OMIDB':              [ModelFactory(AES.Generic_VAE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
+}
+
+dataset_reference_waes = {
+    'MNIST':              [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', n_hidden=96)],
+    'FashionMNIST':       [ModelFactory(AES.Generic_WAE, dims=(1, 28, 28), levels=2, filter='db3', n_hidden=96)],
+    'CIFAR10':            [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=3, filter='db3', n_hidden=256)],
+    'CIFAR100':           [ModelFactory(AES.Generic_WAE, dims=(3, 32, 32), levels=3, filter='db3', n_hidden=256)],
+    'STL10':              [ModelFactory(AES.Generic_WAE, dims=(3, 96, 96), levels=4, filter='db3', n_hidden=512)],
+    'TinyImagenet':       [ModelFactory(AES.Generic_WAE, dims=(3, 64, 64), levels=4, filter='db3', n_hidden=512)],
 }
 
 dataset_reference_pcnns = {
@@ -159,6 +168,7 @@ all_methods = {
     'deep_ensemble':    DE.DeepEnsemble,
     'odin':             ODIN.ODIN,
     'reconst_thresh':   RE.ReconstructionThreshold,
+    'waverecon_thresh': RE.WaveletReconstructionThreshold,
     'pixelcnn':         PCNN.PixelCNN,
     'openmax':          OM.OpenMax,
 }
@@ -190,6 +200,11 @@ def get_ref_autoencoder(dataset):
 def get_ref_vae(dataset):
     if dataset in dataset_reference_vaes:
         return dataset_reference_vaes[dataset]
+    raise NotImplementedError()
+
+def get_ref_wae(dataset):
+    if dataset in dataset_reference_waes:
+        return dataset_reference_waes[dataset]
     raise NotImplementedError()
 
 def get_method(name, args):

@@ -43,6 +43,8 @@ if __name__ == "__main__":
         #(Global.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
         #(Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
         #(Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
+        #(Global.dataset_reference_waes, AESetup.train_BCE_WAE,                      False, []),
+        #(Global.dataset_reference_waes, AESetup.train_MSE_WAE,                      False, []),
         #(Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
         #(Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
     ]
