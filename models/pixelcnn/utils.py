@@ -103,6 +103,8 @@ def discretized_mix_logistic_loss(x, l, do_reduce=True):
 
 def discretized_mix_logistic_loss_1d(x, l, do_reduce=True):
     """ log-likelihood for mixture of discretized logistics, assumes the data has been rescaled to [-1,1] interval """
+    dev = x.device
+
     # Pytorch ordering
     x = x.permute(0, 2, 3, 1)
     l = l.permute(0, 2, 3, 1)
@@ -213,6 +215,7 @@ def sample_from_discretized_mix_logistic_1d(l, nr_mix):
 
 
 def sample_from_discretized_mix_logistic(l, nr_mix):
+    l_dev = l.device
     # Pytorch ordering
     l = l.permute(0, 2, 3, 1)
     ls = [int(y) for y in l.size()]
@@ -281,10 +284,11 @@ def load_part_of_model(model, path):
     added = 0
     for name, param in params.items():
         if name in model.state_dict().keys():
-            try : 
+            try:
                 model.state_dict()[name].copy_(param)
                 added += 1
             except Exception as e:
-                print e
+                print(e)
                 pass
     print('added %s of params:' % (added / float(len(model.state_dict().keys()))))
+

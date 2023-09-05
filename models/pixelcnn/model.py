@@ -1,8 +1,8 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-from layers import * 
-from utils import * 
+from models.pixelcnn.layers import *
+from models.pixelcnn.utils import *
 import numpy as np
 
 class PixelCNNLayer_up(nn.Module):
@@ -113,7 +113,8 @@ class PixelCNN(nn.Module):
         if (self.init_padding is None or self.init_padding.size(0) != x.size(0)) and not sample: 
             xs = [int(y) for y in x.size()]
             padding = torch.ones(xs[0], 1, xs[2], xs[3])
-            self.init_padding = padding.cuda() if x.is_cuda else padding
+            x_dev = x.device
+            self.init_padding = padding.to(x_dev)
         
         if sample : 
             xs = [int(y) for y in x.size()]

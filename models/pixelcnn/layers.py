@@ -1,4 +1,4 @@
-from utils import * 
+from models.pixelcnn.utils import * 
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F

@@ -13,6 +13,16 @@ import matplotlib.pyplot as plt
 
 import os
 
+"""
+From https://en.wikipedia.org/wiki/Coefficient_of_determination
+"""
+def r2_loss(output, target):
+    target_mean = torch.mean(target)
+    ss_tot = torch.sum((target - target_mean) ** 2)
+    ss_res = torch.sum((target - output) ** 2)
+    r2 = 1 - ss_res / ss_tot
+    return r2
+
 class IterativeTrainerConfig(object):
     pass
 
@@ -116,7 +126,6 @@ class IterativeTrainer(object):
                 # some of the underlying optimization procedures. It is not
                 # always used though.
                 prediction = model(input, indices=data_indices, group=phase_name)
-
             loss = criterion(prediction, target)
 
             if(self.args.dump_images):
@@ -147,11 +156,46 @@ class IterativeTrainer(object):
                 if stochastic:
                     loss.backward()
                     optimizer.step()
-        except IOError, e:
-            if e.errno != errno.EINTR:
-                raise
+                else:
+                    nscaler = loss_scaler
+                    if criterion.size_average:
+                        nscaler = nscaler * len(input)
+                    loss2 = loss * nscaler
+                    loss2.backward()
+
+            criterion.size_average = True
+            # Compute various measure. Can be safely skipped.
+            if not backward or not stochastic:
+                if criterion.size_average:
+                    loss.data.mul_(len(input))
+            logger.log('%s_loss'%phase_name, loss.item(), epoch, i)
+            message = '%s Batch loss %.3f'%(phase_name, loss.item())
+
+            if classification:
+                pred = []
+                if prediction.size(1) == 1:
+                    # For binary classification, we do this to make the
+                    # prediction code consistent with the max.
+                    pred = model.classify(prediction)
+                else:
+                    pred = prediction.max(1)[1]
+                if stochastic and backward:
+                    acc = (pred == target.long()).float().view(-1).mean().item()
+                    logger.log('%s_accuracy'%phase_name, acc, epoch, i)
+                else:
+                    acc = (pred == target.long()).float().view(-1).sum().item()
+                    logger.log('%s_accuracy'%phase_name, acc, epoch, i)
+                    acc = acc/target.numel()
+                message = '%s Accuracy %.2f'%(message, acc)
             else:
-                print(colored("Problem averted :D", 'green'))
+                # For regression tasks, use r2 loss
+                acc = r2_loss(prediction,target).cpu()
+                logger.log('%s_accuracy'%phase_name, acc, epoch, i)
+
+            if backward and not stochastic:
+                optimizer.step()
+        except:
+            pass
 
         if not backward or not stochastic:
             logger.get_measure('%s_loss'%phase_name).measure_normalizer = len(dataset.dataset)
