@@ -1,9 +1,12 @@
+from __future__ import print_function
+
 import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.data import DataLoader
 from utils.iterative_trainer import IterativeTrainerConfig
 from utils.logger import Logger
+from termcolor import colored
 
 from methods import AbstractModelWrapper, SVMLoss
 from methods.base_threshold import ProbabilityThreshold
@@ -49,13 +52,13 @@ class ScoreSVM(ProbabilityThreshold):
     
     def get_H_config(self, dataset, will_train=True):
         print("Preparing training D1+D2 (H)")
-        print("Mixture size: %s"%len(dataset))
+        print("Mixture size: %s"%colored('%d'%len(dataset), 'green'))
 
         # 80%, 20% for local train+test
         train_ds, valid_ds = dataset.split_dataset(0.8)
 
         if self.args.D1 in Global.mirror_augment:
-            print(self.args.D1)
+            print(colored("Mirror augmenting %s"%self.args.D1, 'green'))
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds
 
@@ -65,11 +68,10 @@ class ScoreSVM(ProbabilityThreshold):
 
         # Set up the criterion
         # margin must be non-zero.
-        criterion = SVMLoss(margin=1.0).to(self.args.device)
-        criterion.size_average = True
+        criterion = SVMLoss(margin=1.0).cuda()
 
         # Set up the model
-        model = ScoreSVMModelWrapper(self.base_model).to(self.args.device)
+        model = ScoreSVMModelWrapper(self.base_model).cuda()
 
         old_valid_loader = valid_loader
         if will_train:

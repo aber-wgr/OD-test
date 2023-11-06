@@ -4,74 +4,70 @@ import torch
 from utils.args import args
 import global_vars as Global
 
-import json
-from json.decoder import JSONDecodeError
 #########################################################
+"""
+    Master Evaluation.
+"""
 d1_tasks, d2_tasks, d3_tasks, method_tasks = [], [], [], []
 
-json_file = args.exp
-json_exists = os.path.isfile(json_file)
-
-if (not json_file.endswith('.json')) or (not json_exists):
-    print("Using default evaluation")
+if args.exp == 'master':
+    d1_tasks     = ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
+    d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
+    d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
+    method_tasks = [
+                    'pixelcnn/0',
+                    'mcdropout/0',
+                    'prob_threshold/0',     'prob_threshold/1',
+                    'score_svm/0',          'score_svm/1',
+                    'logistic_svm/0',       'logistic_svm/1',
+                    'openmax/0',            'openmax/1',
+                    'binclass/0',           'binclass/1',
+                    'deep_ensemble/0',      'deep_ensemble/1',
+                    'odin/0',               'odin/1',
+                    'reconst_thresh/0',     'reconst_thresh/1',
+                    'knn/1', 'knn/2', 'knn/4', 'knn/8',
+                    'bceaeknn/1', 'vaeaeknn/1', 'mseaeknn/1',
+                    'bceaeknn/2', 'vaeaeknn/2', 'mseaeknn/2',
+                    'bceaeknn/4', 'vaeaeknn/4', 'mseaeknn/4',
+                    'bceaeknn/8', 'vaeaeknn/8', 'mseaeknn/8',
+                    ]
+########################################################
+"""
+    Test evaluation
+"""
+if args.exp == 'test-eval':
+    d1_tasks     = ['MNIST']
+    d2_tasks     = ['UniformNoise', 'NormalNoise']
+    d3_tasks     = ['UniformNoise', 'NormalNoise']
+    method_tasks     = [
+                        'prob_threshold/0',
+                        ]
+########################################################
+"""
+    Default Evaluation
+"""
+if len(d1_tasks) == 0:
     d1_tasks     = ['MNIST']
     d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
     d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
     method_tasks     = [
                         'prob_threshold/0',
                         ]
-else:
-    with open(json_file,"r") as fp:
-        try:
-            jx = json.load(fp)
-            args.exp = jx['name']
-            print("Loaded experiment:" + args.exp)
-            d1_tasks = jx['d1_tasks']
-            d2_tasks = jx['d2_tasks']
-            d3_tasks = jx['d3_tasks']
-            method_tasks = jx['method_tasks']
-        except KeyError:
-            print("Bad JSON file, check key headers")
-            quit()
-        except JSONDecodeError:
-            print("Bad JSON file, check structure")
-            quit()
-#if args.exp == 'master':
-#    d1_tasks     = ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
-#    d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
-#    d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
-#    method_tasks = [
-#                    'mcdropout/0',
-#                    'prob_threshold/0',     'prob_threshold/1',
-#                    'logistic_svm/0',       'logistic_svm/1',
-#                    'score_svm/0',          'score_svm/1',
-#                    'binclass/0',           'binclass/1',
-#                    'deep_ensemble/0',      'deep_ensemble/1',
-#                    'knn/1', 'knn/2', 'knn/4', 'knn/8',
-#                    'bceaeknn/1', 'vaeaeknn/1', 'mseaeknn/1',
-#                    'bceaeknn/2', 'vaeaeknn/2', 'mseaeknn/2',
-#                    'bceaeknn/4', 'vaeaeknn/4', 'mseaeknn/4',
-#                    'bceaeknn/8', 'vaeaeknn/8', 'mseaeknn/8',
-#                    'reconst_thresh/0',     'reconst_thresh/1',
-#                    'odin/0',               'odin/1',
-#                    'openmax/0',            'openmax/1',
-#                    ]
-########################################################
-#"""
-#    Test evaluation
-#"""
-#if args.exp == 'test-eval':
-#    d1_tasks     = ['MNIST', 'CIFAR10', 'STL10']
-#    d2_tasks     = ['UniformNoise', 'NormalNoise', 'NotMNIST', 'TinyImagenet']
-#    d3_tasks     = ['UniformNoise', 'NormalNoise', 'NotMNIST', 'TinyImagenet']
-#    method_tasks     = [
-#                        'prob_threshold/0',
-#                        ]
-########################################################
 
 # Construct the dataset cache
 ds_cache = {}
+
+for m in [d1_tasks, d2_tasks, d3_tasks]:
+    for d in m:
+        if not ds_cache.has_key(d):
+            ds_cache[d] = Global.all_datasets[d]()
+
 results = []
+# If results exists already, just continue where left off.
+results_path = os.path.join(args.experiment_path, 'results.pth')
+if os.path.exists(results_path) and not args.force_run:
+    print ("Loading previous checkpoint")
+    results = torch.load(results_path)
 
 def has_done_before(method, d1, d2, d3):
     for m, ds, dm, dt, mid, a1, a2 in results:
@@ -105,9 +101,18 @@ if __name__ == "__main__":
                     print ('DS2:%s is not compatible with DS1:%s, skipping.'%(ds2.name, ds1.name))
                     continue
 
-                if torch.ByteTensor(
-                        [has_done_before(method, d1, d2, d3) or not ds_cache[d3].is_compatible(ds1) or d2 == d3 for d3 in d3_tasks]
-                    ).all():
+                print ("Performing %s on %s vs. %s-%s"%(colored(method, 'green'), colored(d1, 'blue'), colored(d2, 'red'), colored(d3, 'red')))
+
+                if has_done_before(method, d1, d2, d3):
+                    print (colored("Skipped, has been done before.", 'yellow'))
+                    continue
+
+                ds3 = ds_cache[args.D3]
+
+                if not ds3.is_compatible(ds1):
+                    print ('%s is not compatible with %s, skipping.'
+                            %(colored(ds3.name, 'red'),
+                              colored(ds1.name, 'red')))
                     continue
 
                 valid_mixture = None

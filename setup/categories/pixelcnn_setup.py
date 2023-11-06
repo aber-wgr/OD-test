@@ -1,4 +1,7 @@
+from __future__ import print_function
 import os
+from termcolor import colored
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -10,14 +13,15 @@ from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
 from datasets import MirroredDataset
 
+from torch.utils.data import WeightedRandomSampler
+
 import models.pixelcnn.utils as pcnn_utils
 
 def sample(model, batch_size, obs):
     model.train(False)
-    m_dev = model.device()
     nmix = model.nr_logistic_mix
     data = torch.zeros(batch_size, obs[0], obs[1], obs[2])
-    data = data.to(m_dev)
+    data = data.cuda()
     rescaling_inv = lambda x : .5 * x  + .5
     with torch.set_grad_enabled(False):
         for i in range(obs[1]):
@@ -32,8 +36,10 @@ def sample(model, batch_size, obs):
                 data[:, :, i, j] = out_sample.data[:, :, i, j]
     return rescaling_inv(data)
 
-def get_pcnn_config(args, model, dataset):
-    print("Preparing training D1 for %s"%(dataset.name))
+def get_pcnn_config(args, model, domain):
+    print("Preparing training D1 for %s"%(domain.name))
+
+    dataset = domain.get_D1_train()
 
     sample_im, _ = dataset[0]
     obs = sample_im.size()
@@ -43,15 +49,23 @@ def get_pcnn_config(args, model, dataset):
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
     if dataset.name in Global.mirror_augment:
-        print("Mirror augmenting %s"%dataset.name)
+        print(colored("Mirror augmenting %s"%dataset.name, 'green'))
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds
 
+    #recalculate weighting
+    class_weights = domain.calculate_D1_weighting()
+    d1_set = train_ds
+    weights = [0] * len(d1_set)                                              
+    for idx, val in enumerate(d1_set):                                          
+        weights[idx] = class_weights[val[1]]
+
+    train_sampler = WeightedRandomSampler(weights, len(train_ds),replacement=False)
+
     # Initialize the multi-threaded loaders.
-    pin = (args.device != 'cpu')
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=pin)
-    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
-    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
+    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
+    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
 
     # Set up the model
     model = model.to(args.device)
@@ -76,6 +90,7 @@ def get_pcnn_config(args, model, dataset):
     config.cast_float_label = False
     config.autoencoder_target = True
     config.stochastic_gradient = True
+    config.visualize = not args.no_visualize
     config.model = model
     config.logger = Logger()
     config.sampler = lambda x: sample(x.model, 32, obs)
@@ -86,7 +101,7 @@ def get_pcnn_config(args, model, dataset):
     
     if hasattr(model, 'train_config'):
         model_train_config = model.train_config()
-        for key, value in model_train_config.items():
+        for key, value in model_train_config.iteritems():
             print('Overriding config.%s'%key)
             config.__setattr__(key, value)
 
@@ -104,7 +119,7 @@ def train_pixelcnn(args, model, dataset):
     if not os.path.isfile(hbest_path+".done"):
         config = get_pcnn_config(args, model, dataset)
         trainer = IterativeTrainer(config, args)
-        print('Training from scratch')
+        print(colored('Training from scratch', 'green'))
         best_loss = 999999999
         for epoch in range(1, config.max_epoch+1):
 
@@ -121,7 +136,14 @@ def train_pixelcnn(args, model, dataset):
             test_loss = config.logger.get_measure('test_loss').mean_epoch()
 
             config.scheduler.step(train_loss)
-            
+
+            if config.visualize:
+                # Show the average losses for all the phases in one figure.
+                config.logger.visualize_average_keys('.*_loss', 'Average Loss', trainer.visdom)
+                config.logger.visualize_average('LRs', trainer.visdom)
+                samples = config.sampler(config)
+                trainer.visdom.images(samples.cpu(), win='sample_images')
+
             # Save the logger for future reference.
             torch.save(config.logger.measures, os.path.join(home_path, 'logger.pth'))
 
@@ -131,12 +153,14 @@ def train_pixelcnn(args, model, dataset):
             #     torch.save(config.model.state_dict(), os.path.join(home_path, 'model.%d.pth'%epoch))
 
             if args.save and test_loss < best_loss:
-                print('Updating the on file model with %s'%('%.4f'%test_loss))
+                print('Updating the on file model with %s'%(colored('%.4f'%test_loss, 'red')))
                 best_loss = test_loss
                 torch.save(config.model.state_dict(), hbest_path)
         
         torch.save({'finished':True}, hbest_path+".done")
         torch.save(config.model.state_dict(), hlast_path)
 
+        if config.visualize:
+            trainer.visdom.save([trainer.visdom.env])
     else:
         print("Skipping %s"%(colored(home_path, 'yellow')))

@@ -1,8 +1,8 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-import models.pixelcnn.layers
-import models.pixelcnn.utils
+from models.pixelcnn.layers import *
+from models.pixelcnn.utils import *
 import numpy as np
 
 class PixelCNNLayer_up(nn.Module):
@@ -55,14 +55,9 @@ class PixelCNNLayer_down(nn.Module):
 
 class PixelCNN(nn.Module):
     def __init__(self, nr_resnet=5, nr_filters=80, nr_logistic_mix=10, 
-                    resnet_nonlinearity='concat_elu', input_channels=3,split_size=0):
+                    resnet_nonlinearity='concat_elu', input_channels=3):
         super(PixelCNN, self).__init__()
         self.netid = 'nr-resnet{}.nr-filters{}.nr-logmix{}'.format(nr_resnet, nr_filters, nr_logistic_mix)
-
-        self.dev1 = torch.device('cuda:0')
-        self.dev2 = torch.device('cuda:0')
-
-        self.split_size = split_size
 
         if resnet_nonlinearity == 'concat_elu' : 
             self.resnet_nonlinearity = lambda x : concat_elu(x)
@@ -109,10 +104,6 @@ class PixelCNN(nn.Module):
     def preferred_name(self):
         return self.__class__.__name__+"."+self.netid
 
-    # because the model is split, we need to know which device the outputs go to put the labels on so the loss function can do the comparison
-    def get_output_device(self):
-        return self.dev2
-
     def forward(self, x, sample=False):
         # The input must be in [-1, 1]
         if not sample:
@@ -122,14 +113,13 @@ class PixelCNN(nn.Module):
         if (self.init_padding is None or self.init_padding.size(0) != x.size(0)) and not sample: 
             xs = [int(y) for y in x.size()]
             padding = torch.ones(xs[0], 1, xs[2], xs[3])
-            x_dev = x.device()
+            x_dev = x.device
             self.init_padding = padding.to(x_dev)
         
         if sample : 
             xs = [int(y) for y in x.size()]
             padding = torch.ones(xs[0], 1, xs[2], xs[3])
-            x_dev = x.device()
-            padding = padding.to(x_dev)
+            padding = padding.cuda() if x.is_cuda else padding
             x = torch.cat((x, padding), 1)
 
         ###      UP PASS    ###

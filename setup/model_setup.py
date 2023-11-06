@@ -1,4 +1,5 @@
 import os,sys,inspect
+from termcolor import colored
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -15,7 +16,7 @@ import categories.ae_setup as AESetup
 import categories.pixelcnn_setup as PCNNSetup
 
 if args.exp != 'model_ref':
-    print('The exp is NOT model_ref!')
+    print(colored('The exp is NOT model_ref!', 'yellow'))
 
 def needs_processing(args, dataset_class, models, suffix):
     """
@@ -23,7 +24,7 @@ def needs_processing(args, dataset_class, models, suffix):
     """
     for model in models:
         for suf in suffix:
-            home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset_class.__name__, model_setup=True, suffix_str=suf)
+            home_path = Models.get_ref_model_path(args, model.__name__, dataset_class.__name__, model_setup=True, suffix_str=suf)
             hbest_path = os.path.join(home_path, 'model.best.pth.done')
             if not os.path.isfile(hbest_path):
                 return True

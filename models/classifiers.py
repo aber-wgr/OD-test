@@ -99,6 +99,9 @@ class Scaled_VGG(nn.Module):
     def output_size(self):
         return torch.LongTensor([1, self.classes])
 
+    def get_num_classes(self):
+        return self.classes
+
     # because the model is split, we need to know which device the outputs go to put the labels on so the loss function can do the comparison
     def get_output_device(self):
         return self.dev2
@@ -165,6 +168,12 @@ class Scaled_VGG_2GPU(Scaled_VGG):
     # because the model is split, we need to know which device the outputs go to put the labels on so the loss function can do the comparison
     def get_output_device(self):
         return self.dev2
+
+    def output_size(self):
+        return torch.LongTensor([1, self.classes])
+
+    def get_num_classes(self):
+        return self.classes
 
     def train_config(self):
         config = {}
@@ -261,6 +270,12 @@ class Scaled_Resnet(nn.Module):
 
     def output_size(self):
         return torch.LongTensor([1, self.classes])
+
+    def get_num_classes(self):
+        return self.classes
+
+    def get_output_device(self):
+        return self.dev2
 
     def train_config(self):
         config = {}

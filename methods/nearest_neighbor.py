@@ -1,5 +1,6 @@
+from __future__ import print_function
 from os import path
-
+from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -9,7 +10,8 @@ import global_vars as Global
 import models as Models
 from datasets import MirroredDataset
 from methods.score_svm import ScoreSVM
-from torchinfo import summary
+
+from tqdm import tqdm
 
 class KNNModel(nn.Module):
     """
@@ -18,8 +20,8 @@ class KNNModel(nn.Module):
 
     def __init__(self, base_data, k=1):
         super(KNNModel, self).__init__()
-        self.base_data = base_data.half()        # We probably have to rewrite this part of the code 
-                                                 # as larger datasets may not entirely fit into the GPU memory.
+        self.base_data = base_data.half().cuda()         # We probably have to rewrite this part of the code 
+                                                         # as larger datasets may not entirely fit into the GPU memory.
         n_data = self.base_data.size(0)
         self.base_data = self.base_data.view(n_data, -1) # Flatten the train data.
         self.base_data_norm = (self.base_data*self.base_data).sum(dim=1)
@@ -47,10 +49,6 @@ class KNNModel(nn.Module):
     def output_size(self):
         return torch.LongTensor([1, self.K])
 
-    def get_output_device(self):
-        return 'cpu'
-
-
 class KNNSVM(ScoreSVM):
     def __init__(self, args):
         super(KNNSVM, self).__init__(args)
@@ -68,7 +66,7 @@ class KNNSVM(ScoreSVM):
             self.base_model = None
 
         if dataset.name in Global.mirror_augment:
-            print("Mirror augmenting %s"%dataset.name)
+            print(colored("Mirror augmenting %s"%dataset.name, 'green'))
             new_train_ds = dataset + MirroredDataset(dataset)
             dataset = new_train_ds
         
@@ -76,8 +74,11 @@ class KNNSVM(ScoreSVM):
         n_dim  = dataset[0][0].numel()
         self.base_data = torch.zeros(n_data, n_dim, dtype=torch.float32)
 
-        for i, (x, _) in enumerate(dataset):
-            self.base_data[i].copy_(x.view(-1))
+        with tqdm(total=n_data) as pbar:
+            pbar.set_description('Caching X_train for %d-nn'%self.default_model)
+            for i, (x, _) in enumerate(dataset):
+                self.base_data[i].copy_(x.view(-1))
+                pbar.update()
         # self.base_data = torch.cat([x.view(1, -1) for x,_ in dataset])
         self.base_model = KNNModel(self.base_data, k=self.default_model).to(self.args.device)
         self.base_model.eval()
@@ -89,7 +90,7 @@ class AEKNNModel(nn.Module):
 
     def __init__(self, subnetwork, base_data, k=1):
         super(AEKNNModel, self).__init__()
-        self.base_data = base_data
+        self.base_data = base_data.cuda()
         n_data = self.base_data.size(0)
         self.base_data = self.base_data.view(n_data, -1) # Flatten the train data.
         self.base_data_norm = (self.base_data*self.base_data).sum(dim=1)
@@ -151,37 +152,32 @@ class AEKNNSVM(ScoreSVM):
 
         hbest_path = path.join(home_path, 'model.best.pth')
         best_h_path = hbest_path
-        print('Loading H1 model from %s'%best_h_path)
+        print(colored('Loading H1 model from %s'%best_h_path, 'red'))
         base_model.load_state_dict(torch.load(best_h_path))
         base_model.eval()
 
         if dataset.name in Global.mirror_augment:
-            print("Mirror augmenting %s"%dataset.name)
+            print(colored("Mirror augmenting %s"%dataset.name, 'green'))
             new_train_ds = dataset + MirroredDataset(dataset)
             dataset = new_train_ds
 
         # Initialize the multi-threaded loaders.
         all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=1, pin_memory=True)
 
-        im,l = dataset[0]
-        input_size = im.size() #datasets in pytorch are assumed to be uniform size
-        #summary(base_model, input_size=(self.args.batch_size, input_size[0], input_size[1], input_size[2]), depth=10)
-
-        g = summary(base_model, input_size=(self.args.batch_size, input_size[0], input_size[1], input_size[2]), depth=100, verbose=0)
-        model_ram = g.to_megabytes(g.total_input) + g.float_to_megabytes(g.total_output + g.total_params)
-        print("Estimated Model Size:" + str(model_ram) + " Mb")
-
         n_data = len(dataset)
-        n_dim  = base_model.encode(im.to(self.args.device).unsqueeze(0)).numel()
+        n_dim  = base_model.encode(dataset[0][0].to(self.args.device).unsqueeze(0)).numel()
         print('nHidden %d'%(n_dim))
         self.base_data = torch.zeros(n_data, n_dim, dtype=torch.float32)
         base_ind = 0
         with torch.set_grad_enabled(False):
-            for i, (x, _) in enumerate(all_loader):
-                n_data = x.size(0)
-                output = base_model.encode(x.to(self.args.device)).data
-                self.base_data[base_ind:base_ind+n_data].copy_(output)
-                base_ind = base_ind + n_data
+            with tqdm(total=len(all_loader)) as pbar:
+                pbar.set_description('Caching X_train for %d-nn'%self.default_model)
+                for i, (x, _) in enumerate(all_loader):
+                    n_data = x.size(0)
+                    output = base_model.encode(x.to(self.args.device)).data
+                    self.base_data[base_ind:base_ind+n_data].copy_(output)
+                    base_ind = base_ind + n_data
+                    pbar.update()
         # self.base_data = torch.cat([x.view(1, -1) for x,_ in dataset])
         self.base_model = AEKNNModel(base_model, self.base_data, k=self.default_model).to(self.args.device)
         self.base_model.eval()
