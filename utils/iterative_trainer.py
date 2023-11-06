@@ -64,10 +64,10 @@ class IterativeTrainer(object):
         stochastic  = self.config.stochastic_gradient
         classification = self.config.classification
 
-        #print("self.config.name:" + self.config.name)
+        print("self.config.name:" + self.config.name)
         home_path = Models.get_ref_model_path(self.args, model.__class__.__name__, self.config.name, model_setup=True, suffix_str="CCC")
         dump_path = os.path.join(home_path, 'dump')
-        if not os.path.isdir(dump_path):
+        if not os.path.isdir(dump_path) and self.args.dump_images:
             os.makedirs(dump_path)
 
         # See the network to the target mode.
@@ -173,6 +173,7 @@ class IterativeTrainer(object):
 
             if classification:
                 pred = []
+                #print("prediction:{}".format(prediction))
                 if prediction.size(1) == 1:
                     # For binary classification, we do this to make the
                     # prediction code consistent with the max.

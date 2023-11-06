@@ -5,8 +5,6 @@ import torch.nn.functional as F
 import torchvision.models.vgg as VGG
 import torchvision.models.resnet as Resnet
 
-import torchinfo
-
 class Scaled_VGG(nn.Module):
 
     #channel-aware VGG builder
@@ -73,7 +71,7 @@ class Scaled_VGG(nn.Module):
 
         self.model = self.model.to(self.dev1)
 
-        torchinfo.summary(self.model, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(32, self.scale[0], self.scale[1], self.scale[2]))
+        #torchinfo.summary(self.model, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(32, self.scale[0], self.scale[1], self.scale[2]))
 
         if(init_weights):
             self.model._initialize_weights()
@@ -93,8 +91,9 @@ class Scaled_VGG(nn.Module):
         return output
 
     def get_info(self,args):
-        self.batch_size = args.batch_size
-        self.info = torchinfo.summary(self.model, input_size=(self.batch_size, self.scale[0], self.scale[1], self.scale[2]), verbose=0)
+        #self.batch_size = args.batch_size
+        #self.info = torchinfo.summary(self.model, input_size=(self.batch_size, self.scale[0], self.scale[1], self.scale[2]), verbose=0)
+        self.info = None
         return self.info
 
     def output_size(self):
@@ -237,6 +236,8 @@ class Scaled_Resnet(nn.Module):
 
         self.split_size = split_size
 
+        self.classes = classes
+
         # Resnet50.
         layers = [2, 3, 5, 2]
         if scale[0] > 1:
@@ -375,6 +376,8 @@ class Scaled_ResNext(nn.Module):
 
         self.split_size = split_size
 
+        self.classes = classes
+
         # Resnext50_32x4d.
         layers = [2, 3, 5, 2]
         if scale[0] > 1:
@@ -406,7 +409,7 @@ class Scaled_ResNext(nn.Module):
         return torch.device('cuda:0')
 
     def output_size(self):
-        return torch.LongTensor([1, classes])
+        return torch.LongTensor([1, self.classes])
 
     def get_output_device(self):
         return self.dev2
@@ -432,6 +435,8 @@ class Scaled_Densenet(nn.Module):
         self.dev2 = torch.device('cuda:0')
 
         self.split_size = split_size
+
+        self.classes = classes
 
         # Densenet, adapted for small image sizes
         blocks = (24,16)
@@ -473,7 +478,7 @@ class Scaled_Densenet(nn.Module):
         return torch.device('cuda:0')
 
     def output_size(self):
-        return torch.LongTensor([1, classes])
+        return torch.LongTensor([1, self.classes])
 
     def get_output_device(self):
         return self.dev2

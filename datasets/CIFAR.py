@@ -18,17 +18,11 @@ class CIFAR10(AbstractDomainInterface):
         D2 (Dv, Dt): 50,000 valid + 10,000 test.
     """
 
-    def __init__(self):
-        super(CIFAR10, self).__init__()
+    def __init__(self, drop_class=None):
+        super(CIFAR10, self).__init__(drop_class = drop_class)
         
         im_transformer  = transforms.Compose([transforms.ToTensor()])
         root_path       = './workspace/datasets/cifar10'
-        self.D1_train_ind = torch.arange(0, 40000).int()
-        self.D1_valid_ind = torch.arange(40000, 50000).int()
-        self.D1_test_ind  = torch.arange(0, 10000).int()
-
-        self.D2_valid_ind = torch.arange(0, 50000).int()
-        self.D2_test_ind  = torch.arange(0, 10000).int()
 
         self.ds_train   = datasets.CIFAR10(root_path,
                                         train=True,
@@ -38,21 +32,65 @@ class CIFAR10(AbstractDomainInterface):
                                         train=False,
                                         transform=im_transformer,
                                         download=True)
-    
+
+        
+        self.D1_train_ind = torch.arange(0, 40000).int()
+        self.D1_valid_ind = torch.arange(40000, 50000).int()
+        self.D1_test_ind  = torch.arange(0, 10000).int()
+
+        self.D2_valid_ind = torch.arange(0, 50000).int()
+        self.D2_test_ind  = torch.arange(0, 10000).int()
+
     def get_D1_train(self):
-        return SubDataset(self.name, self.ds_train, self.D1_train_ind)
+        target_indices = self.D1_train_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices)
+
+    def get_D1_train_dropped(self):
+        target_indices = self.D1_train_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name], True)
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=1)
+
     def get_D1_valid(self):
-        return SubDataset(self.name, self.ds_train, self.D1_valid_ind, label=0)
+        target_indices = self.D1_valid_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=0)
+
+    def get_D1_valid_dropped(self):
+        target_indices = self.D1_valid_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name], True)
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=1)
+
     def get_D1_test(self):
-        return SubDataset(self.name, self.ds_test, self.D1_test_ind, label=0)
+        target_indices = self.D1_test_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_test, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_test, target_indices, label=0)
+
+    def get_D1_test_dropped(self):
+        target_indices = self.D1_test_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_test, target_indices, self.filter_rules[self.base_name],True)
+        return SubDataset(self.name, self.base_name, self.ds_test, target_indices, label=1)
 
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.ds_train, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.base_name, self.ds_train, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
 
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.ds_test, self.D2_test_ind, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.base_name, self.ds_test, self.D2_test_ind, label=1, transform=D1.conformity_transform())
+
+    def get_num_classes(self):
+        classes = 10
+        if self.base_name in self.filter_rules:
+            dropped_classes = len(self.filter_rules[self.base_name])
+            classes = classes - dropped_classes
+        return classes
 
     def conformity_transform(self):
         return transforms.Compose([ExpandRGBChannels(),
@@ -68,8 +106,8 @@ class CIFAR100(AbstractDomainInterface):
         D2 (Dv , Dt): 50,000 valid + 10,000 test.
     """
 
-    def __init__(self):
-        super(CIFAR100, self).__init__()
+    def __init__(self, drop_class=None):
+        super(CIFAR100, self).__init__(drop_class = drop_class)
         
         im_transformer  = transforms.Compose([transforms.ToTensor()])
         root_path       = './workspace/datasets/cifar100'
@@ -89,28 +127,43 @@ class CIFAR100(AbstractDomainInterface):
                                         transform=im_transformer,
                                         download=True)
 
-        """
-            TinyImagenet:
-                 6:bee with 38:bee
-                 21:chimpanzee with 55:chimpanzee, chimp, Pan troglodytes
-                 24:cockroach with 41:cockroach, roach
-                 43:lion with 34:lion, king of beasts, Panthera leo
-                 51:mushroom with 185:mushroom
-                 53:orange with 186:orange
-                 61:plate with 177:plate
-                 77:snail with 15:snail
-                 89:tractor with 164:tractor
-        """
-        self.filter_rules = {
-            'TinyImagenet': [6, 21, 24, 43, 51, 53, 61, 77, 89]
-        }                                        
+        self.filter_rules['TinyImagenet'] = [6, 21, 24, 43, 51, 53, 61, 77, 89]      
     
     def get_D1_train(self):
-        return SubDataset(self.name, self.ds_train, self.D1_train_ind)
+        target_indices = self.D1_train_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices)
+
+    def get_D1_train_dropped(self):
+        target_indices = self.D1_train_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name], True)
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=1)
+
     def get_D1_valid(self):
-        return SubDataset(self.name, self.ds_train, self.D1_valid_ind, label=0)
+        target_indices = self.D1_valid_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=0)
+
+    def get_D1_valid_dropped(self):
+        target_indices = self.D1_valid_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name], True)
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=1)
+
     def get_D1_test(self):
-        return SubDataset(self.name, self.ds_test, self.D1_test_ind, label=0)
+        target_indices = self.D1_test_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_test, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_test, target_indices, label=0)
+
+    def get_D1_test_dropped(self):
+        target_indices = self.D1_test_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_test, target_indices, self.filter_rules[self.base_name],True)
+        return SubDataset(self.name, self.base_name, self.ds_test, target_indices, label=1)
 
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
@@ -126,9 +179,16 @@ class CIFAR100(AbstractDomainInterface):
             target_indices = filter_indices(self.ds_test, target_indices, self.filter_rules[D1.name])
         return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
 
+    def get_num_classes(self):
+        classes = 100
+        if self.base_name in self.filter_rules:
+            dropped_classes = len(self.filter_rules[self.base_name])
+            classes = classes - dropped_classes
+        return classes
+
     def conformity_transform(self):
         return transforms.Compose([ExpandRGBChannels(),
                                    transforms.ToPILImage(),
                                    transforms.Resize((32, 32)),
                                    transforms.ToTensor(),                                   
-                                   ])                               
+                                   ])                        

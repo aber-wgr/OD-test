@@ -22,14 +22,15 @@ class SubDataset(data.Dataset):
         When optimizing for threshold, for instance, you don't need to run the underlying network for each input entry.
         Using the index, you can just fetch the cached network output. See the implementation for examples.
     """
-    def __init__(self, name, parent_dataset, indices, label=None, transform=None, cached=False):
+    def __init__(self, name, base_name, parent_dataset, indices, label=None, transform=None, cached=False):
         self.parent_dataset = parent_dataset
         self.name = name
+        self.base_name = base_name
         self.indices = indices
         self.label = label
         self.transform = transform
         self.cached = cached
-    
+        
     def __len__(self):
         return self.indices.numel()
     
@@ -61,9 +62,9 @@ class SubDataset(data.Dataset):
             Randomly split the data into approximately p, 1-p sets.
         """
         p1 = torch.FloatTensor(self.indices.numel()).fill_(p).bernoulli().byte()
-        d1 = SubDataset(self.name, self.parent_dataset, self.indices[p1], label=self.label,
+        d1 = SubDataset(self.name, self.name, self.parent_dataset, self.indices[p1], label=self.label,
                         transform=self.transform, cached=self.cached)
-        d2 = SubDataset(self.name, self.parent_dataset, self.indices[1-p1], label=self.label,
+        d2 = SubDataset(self.name, self.name, self.parent_dataset, self.indices[1-p1], label=self.label,
                         transform=self.transform, cached=self.cached)
         return d1, d2
 
@@ -92,8 +93,31 @@ class AbstractDomainInterface(object):
         All the datasets used in this project must implement this interface.
         P.S: I really hate the way python handles inheritence and abstractions.
     """
-    def __init__(self):
-        self.name = self.__class__.__name__
+    def __init__(self, drop_class=None):
+        self.base_name = self.__class__.__name__
+        self.drop_class = drop_class
+        self.filter_rules = None
+        if(self.drop_class is not None):
+            self.name = self.base_name + "_drop_" + str(drop_class)
+        else:
+            self.name = self.base_name
+        self.filter_rules = {}
+        if(self.drop_class is not None):
+            self.filter_rules[self.base_name] = []
+            self.filter_rules[self.base_name].append(self.drop_class)
+
+    def filter_indices(self, dataset, indices, filter_label, flip = False):
+        #breakpoint()
+        accept = []
+        for ind in indices:
+            ind = int(ind)
+            _, label = dataset[ind]
+            s = label not in filter_label 
+            if flip: 
+                s = not s
+            if s:
+                accept.append(ind)
+        return torch.IntTensor(accept)
 
     """
         D1's are used for the reference datasets.
@@ -107,6 +131,39 @@ class AbstractDomainInterface(object):
         raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
     def get_D1_test(self):
         raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+    def get_D1_train_dropped(self):
+        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+    def get_D1_valid_dropped(self):
+        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+    def get_D1_test_dropped(self):
+        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+
+    def get_train_sampler(self):
+        return None
+
+    def calculate_D1_weighting(self):
+        train_set = self.get_D1_train()
+        nc = self.get_num_classes()
+        # if we have any filtered classes
+        if(self.filter_rules and self.filter_rules is not None):
+            if(self.base_name in self.filter_rules):
+                nc += len(self.filter_rules[self.base_name]) # re-add the dropped classes
+        count = [0] * nc                                                      
+        for item in train_set:                                                         
+            count[item[1]] += 1                                                     
+        self.train_class_weight = [0.] * nc
+        for i in range(nc):
+            if(not self.filter_rules or self.filter_rules is None):
+                self.train_class_weight[i] = 1.0/float(count[i])
+            else: 
+                if(self.base_name in self.filter_rules):
+                    if(i not in self.filter_rules[self.base_name]):
+                        self.train_class_weight[i] = 1.0/float(count[i])
+                else:
+                    self.train_class_weight[i] = 1.0/float(count[i])
+        
+        # at this point all the dropped classes should be 0.0, which is correct
+        return self.train_class_weight
 
     """
         D2's are used for the validation and target datasets.

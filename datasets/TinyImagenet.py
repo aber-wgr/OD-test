@@ -1,11 +1,10 @@
-from __future__ import print_function
+#from __future__ import print_function
 import os
 import os.path
 import errno
 import torch
 import torch.utils.data as data
 from PIL import Image
-from termcolor import colored
 import torchvision.transforms as transforms
 from datasets import SubDataset, AbstractDomainInterface, ExpandRGBChannels
 
@@ -215,8 +214,8 @@ class TinyImagenet(AbstractDomainInterface):
         D2: 10,000 Valid + 100,000 train (shuffled), 10,000 Test.
     """
 
-    def __init__(self, downsample=None):
-        super(TinyImagenet, self).__init__()
+    def __init__(self, downsample=None, drop_class=None):
+        super(TinyImagenet, self).__init__(drop_class = drop_class)
         
         im_transformer = None
         self.downsample = downsample
@@ -254,28 +253,50 @@ class TinyImagenet(AbstractDomainInterface):
         self.D2_valid_ind = train_indices.int()
         self.D2_test_ind  = torch.arange(0, len(self.ds_valid)).int()
 
-        """
-        CIFAR100:
-                 15:snail with 77:snail
-                 34:lion, king of beasts, Panthera leo with 43:lion
-                 38:bee with 6:bee
-                 41:cockroach, roach with 24:cockroach
-                 55:chimpanzee, chimp, Pan troglodytes with 21:chimpanzee
-                 164:tractor with 89:tractor
-                 177:plate with 61:plate
-                 185:mushroom with 51:mushroom
-                 186:orange with 53:orange
-        """
-        self.filter_rules = {
-            'CIFAR100': [15, 34, 38, 41, 55, 164, 177, 185, 186]
-        }
+        self.filter_rules['CIFAR100'] = [15, 34, 38, 41, 55, 164, 177, 185, 186]
 
     def get_D1_train(self):
-        return SubDataset(self.name, self.ds_train, self.D1_train_ind)
+        target_indices = self.D1_train_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices)
+
+    def get_D1_train_dropped(self):
+        target_indices = self.D1_train_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name], True)
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=1)
+
     def get_D1_valid(self):
-        return SubDataset(self.name, self.ds_valid, self.D1_valid_ind, label=0)
+        target_indices = self.D1_valid_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=0)
+
+    def get_D1_valid_dropped(self):
+        target_indices = self.D1_valid_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_train, target_indices, self.filter_rules[self.base_name], True)
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices, label=1)
+
     def get_D1_test(self):
-        return SubDataset(self.name, self.ds_test, self.D1_test_ind, label=0)
+        target_indices = self.D1_test_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_test, target_indices, self.filter_rules[self.base_name])
+        return SubDataset(self.name, self.base_name, self.ds_test, target_indices, label=0)
+
+    def get_D1_test_dropped(self):
+        target_indices = self.D1_test_ind
+        if self.base_name in self.filter_rules:
+            target_indices = self.filter_indices(self.ds_test, target_indices, self.filter_rules[self.base_name],True)
+        return SubDataset(self.name, self.base_name, self.ds_test, target_indices, label=1)
+
+    def get_num_classes(self):
+        classes = 200
+        if self.base_name in self.filter_rules:
+            dropped_classes = len(self.filter_rules[self.base_name])
+            classes = classes - dropped_classes
+        return classes
 
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
@@ -303,5 +324,5 @@ class TinyImagenet(AbstractDomainInterface):
         return out_transform
 
 class TinyImagenetd32(TinyImagenet):
-    def __init__(self):
-        super(TinyImagenetd32, self).__init__(downsample=32)
+    def __init__(self,drop_class=None):
+        super(TinyImagenetd32, self).__init__(downsample=32,drop_class=drop_class)

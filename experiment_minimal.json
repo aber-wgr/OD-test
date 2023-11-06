@@ -1,0 +1,17 @@
+{
+  "name": "master_json",
+  "d1_tasks": [
+    "MNIST"
+  ],
+  "d2_tasks": [
+    "FashionMNIST",
+    "CIFAR10"
+  ],
+  "d3_tasks": [
+    "FashionMNIST",
+    "CIFAR10"
+  ],
+  "method_tasks": [
+    "prob_threshold/0"
+  ]
+}
