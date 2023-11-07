@@ -3,6 +3,13 @@ import torch
 
 from utils.args import args
 import global_vars as Global
+import models.autoencoders as AES
+import copy
+
+from setup.categories.ae_setup import get_vae_config
+
+from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
+
 
 #########################################################
 """
@@ -251,7 +258,166 @@ if __name__ == "__main__":
                         # we can use all the dropped from the training and validation sets, because they were not used in training and we know they're OOD
                         d2_test = ds1.get_D1_test_dropped()
                     else:
-                        d2_test = ds3.get_D2_test(ds1)
+                        if(args.interpolate_shift):
+                            # interpolate shift mode is intended to test the method against domain shift
+                            # we start by training a variational autoencoder on d2 and d3 shuffled together
+                            # then we generate test points from d2 and d3, put them into the VAE encoder, and interpolate between them to generate a new latent space point
+                            # finally, we decode the latent space point and see if it's classified correctly
+                            print("Interpolate shift mode")
+                            print("Training VAE on %s and %s"%(d2, d3))
+                            d2_train_basis = ds2.get_D2_train(ds1)
+                            d3_train_basis = ds3.get_D2_train(ds1)
+
+                            # Combine the sets
+                            d2_train_basis = d2_train_basis + d3_train_basis
+
+                            # Shuffle the sets
+                            d2_train_basis.shuffle_dataset()
+
+                            # Copy the VAE
+                            autoencoder_model = Global.dataset_reference_vaes[ds2][0]
+                            autoencoder_model = copy.deepcopy(autoencoder_model)
+                            
+                            # Set up the config
+                            autoencoder_config = get_ae_config(args, autoencoder_model, d2_train_basis, False)
+                            autoencoder_config.max_epoch = 30
+                            autoencoder_config.name = 'autoencoder_%s_%s'%(d2_train_basis.name, autoencoder_model.preferred_name())
+
+                            autoencoder_trainer = IterativeTrainer(autoencoder_config, args)
+
+                            autoencoder_home_path = Models.get_ref_model_path(args, "combined_" + autoencoder_config.model.__class__.__name__, d1 + "_" + d2, model_setup=True, suffix_str='base')
+                            autoencoder_hbest_path = os.path.join(autoencoder_home_path, 'model.best.pth')
+
+                            best_loss = 999999999
+
+                            if not os.path.isfile(autoencoder_hbest_path+".done"):
+                                best_accuracy = -1
+                                for epoch in range(1, autoencoder_config.max_epoch+1):
+
+                                    print("Epoch " + str(epoch))
+
+                                    # Track the learning rates.
+                                    lrs = [float(param_group['lr']) for param_group in autoencoder_config.optim.param_groups]
+                                    autoencoder_config.logger.log('LRs', lrs, epoch)
+                                    autoencoder_config.logger.get_measure('LRs').legend = ['LR%d'%i for i in range(len(lrs))]
+                                    
+                                    torch.set_grad_enabled(True)
+                                    # run the samples
+                                    for i, (sample, label) in enumerate(autoencoder_config.train_loader):
+                                        x = sample.to(args.device)
+                                        
+                                        torch.set_grad_enabled(True)
+
+                                        # run the autoencoder
+                                        autoencoder_config.model.train()
+                                        autoencoder_config.optim.zero_grad()
+                                        
+                                        output = autoencoder_config.model(x)
+                                    
+                                        # calculate the base VAE loss (reconstruction loss + KL loss)
+                                        loss = autoencoder_config.criterion(output, x)
+                            
+                                        loss.backward()
+                                        autoencoder_config.optim.step()
+
+                                        torch.set_grad_enabled(False)
+                                        autoencoder_trainer.run_epoch(epoch, phase='test')
+                                        
+                                        test_loss = autoencoder_config.logger.get_measure('test_loss').mean_epoch()
+
+                                    # Save the logger for future reference.
+                                    torch.save(autoencoder_config.logger.measures, os.path.join(autoencoder_home_path, 'logger.pth'))
+
+                                    if args.save and test_loss < best_loss:
+                                        print('Updating the on file model with %s'%('%.4f'%test_loss))
+                                        best_loss = test_loss
+                                        torch.save(autoencoder_config.model.state_dict(), autoencoder_hbest_path)
+                                                
+                        
+                            torch.save({'finished':True}, autoencoder_hbest_path + ".done")
+
+                            print("Loading the best model.")
+                            autoencoder_config.model.load_state_dict(torch.load(autoencoder_hbest_path))
+                            autoencoder_config.model.eval()
+
+                            # Now we have a trained VAE, we can generate test points from d2 and d3, and interpolate between them
+
+                            # Get the test sets
+                            d2_test_base = ds2.get_D2_test(ds1)
+                            d3_test_base = ds3.get_D2_test(ds1)
+                            
+                            # Adjust the sizes.
+                            d2_test_len = len(d2_test_base)
+                            d3_test_len = len(d3_test_base)
+
+                            # adjust the sizes to be the same
+
+                            final_len = min(d2_test_len, d3_test_len)
+
+                            print("Adjusting %s and %s to %s"%(d2_test_len,
+                                                            d3_test_len,
+                                                            final_len))
+                            
+                            d2_test_base.trim_dataset(final_len)
+                            d3_test_base.trim_dataset(final_len)
+
+                            # Now run through the test sets, and generate a new point for each pair of points
+                            # First, we need to get the latent space representations of the test points
+                            # We'll store the latent space representations in a list
+
+                            d2_test_latent = []
+
+                            # run the samples
+
+                            for i, (sample, label) in enumerate(d2_test_base):
+                                x = sample.to(args.device)
+
+                                # run the autoencoder
+                                autoencoder_config.model.eval()
+
+                                # get the latent space representation
+                                latent = autoencoder_config.model.encode(x)
+
+                                # add it to the list
+                                d2_test_latent.append(latent)
+
+                            # repeat for d3
+
+                            d3_test_latent = []
+
+                            # run the samples
+
+                            for i, (sample, label) in enumerate(d3_test_base):
+                                x = sample.to(args.device)
+
+                                # run the autoencoder
+                                autoencoder_config.model.eval()
+
+                                # get the latent space representation
+                                latent = autoencoder_config.model.encode(x)
+
+                                # add it to the list
+                                d3_test_latent.append(latent)
+
+                            # Now we get the interpolated points
+                            # Because we're looking at domain shift, we will run from 0 to 1 over the length of the test set
+
+                            for i in range(final_len):
+                                # get the latent space representations of the two points
+                                latent1 = d2_test_latent[i]
+                                latent2 = d3_test_latent[i]
+
+                                # interpolate between them
+                                interpolated = latent1 + (latent2 - latent1) * i / final_len
+
+                                # decode the interpolated point
+                                decoded = autoencoder_config.model.decode(interpolated)
+
+                                # add the decoded point to the test set
+                                d2_test.append(decoded, 0)
+                          
+                        else:
+                            d2_test = ds3.get_D2_test(ds1)
 
                     # Adjust the sizes.
                     d1_test_len = len(d1_test)

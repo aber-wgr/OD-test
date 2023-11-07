@@ -33,8 +33,9 @@ parser.add_argument("--force-run", default=False, action='store_true', help='For
 parser.add_argument('--dump-images', default=False, action='store_true', help='Dump random source/comparison images while training/testing')
 
 parser.add_argument('--unseen-class-test', default=False, action='store_true', help='use with drop-class training to test the n-th class as unseen')
-
 parser.add_argument('--drop-class', default=None, type=int, help='skip this class during training (used for unseen class test)')
+
+parser.add_argument('--interpolate-shift', default=False, action='store_true', help='perform interpolate shift testing')
 
 args = parser.parse_args()
 args.experiment_id = args.exp
