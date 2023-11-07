@@ -1,6 +1,5 @@
 from __future__ import print_function
 from os import path
-from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -27,11 +26,10 @@ class RTModelWrapper(AbstractModelWrapper):
         self.H.register_parameter('transfer', nn.Parameter(torch.FloatTensor([0.0])))
         self.loss_variant = loss_variant
         if self.loss_variant == 0:
-            print(colored('BCE Loss', 'green'))
+            print('BCE Loss')
         else:
-            print(colored('MSE Loss', 'green'))
-        # from visdom import Visdom
-        # self.visdom = Visdom(ipv6=False)
+            print('MSE Loss')
+
 
     def calculate_loss(self, input, target):
         loss = None
@@ -47,8 +45,6 @@ class RTModelWrapper(AbstractModelWrapper):
         base_output = self.base_model(x).detach()
         loss = self.calculate_loss(base_output, x)
         loss = loss.view(loss.size(0), -1).mean(dim=1, keepdim=True)
-        # self.visdom.images(x.data.cpu().numpy(), win='input')
-        # self.visdom.images(nn.functional.sigmoid(base_output).data.cpu().numpy(), win='output')
         return loss
 
     def wrapper_eval(self, x):
@@ -102,7 +98,6 @@ class ReconstructionThreshold(ProbabilityThreshold):
         config.cast_float_label = False
         config.autoencoder_target = True
         config.stochastic_gradient = True
-        config.visualize = not self.args.no_visualize
         config.sigmoid_viz = self.default_model == 0
         config.model = model
         config.optim = None
@@ -128,25 +123,25 @@ class ReconstructionThreshold(ProbabilityThreshold):
         if not path.isfile(best_h_path):
             raise NotImplementedError("%s not found!, Please use setup_model to pretrain the networks first!"%best_h_path)
         else:
-            print(colored('Loading H1 model from %s'%best_h_path, 'red'))
+            print('Loading H1 model from %s'%best_h_path)
             config.model.load_state_dict(torch.load(best_h_path))
         
         trainer.run_epoch(0, phase='all')
         test_loss = config.logger.get_measure('all_loss').mean_epoch(epoch=0)
-        print("All average loss %s"%colored('%.4f'%(test_loss), 'red'))
+        print("All average loss %s"%'%.4f'%(test_loss))
 
         self.base_model = config.model
         self.base_model.eval()
 
     def get_H_config(self, dataset, will_train=True):
         print("Preparing training D1+D2 (H)")
-        print("Mixture size: %s"%colored('%d'%len(dataset), 'green'))
+        print("Mixture size: %s"%'%d'%len(dataset))
 
         # 80%, 20% for local train+test
         train_ds, valid_ds = dataset.split_dataset(0.8)
 
         if self.args.D1 in Global.mirror_augment:
-            print(colored("Mirror augmenting %s"%self.args.D1, 'green'))
+            print("Mirror augmenting %s"%self.args.D1)
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds
 
@@ -199,8 +194,7 @@ class ReconstructionThreshold(ProbabilityThreshold):
         config.criterion = criterion
         config.classification = True
         config.cast_float_label = True
-        config.stochastic_gradient = True  
-        config.visualize = not self.args.no_visualize  
+        config.stochastic_gradient = True
         config.model = model
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=0)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)

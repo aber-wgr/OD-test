@@ -1,11 +1,12 @@
-from __future__ import print_function
 import os
-from termcolor import colored
 
+import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+
+from torch.utils.data import WeightedRandomSampler
 
 import models as Models
 import global_vars as Global
@@ -13,14 +14,16 @@ from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
 from datasets import MirroredDataset
 
-def get_classifier_config(args, model, dataset):
-    print("Preparing training D1 for %s"%(dataset.name))
+def get_classifier_config(args, model, domain):
+    print("Preparing training D1 for %s"%(domain.name))
+
+    dataset = domain.get_D1_train()
 
     # 80%, 20% for local train+test
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
     if dataset.name in Global.mirror_augment:
-        print(colored("Mirror augmenting %s"%dataset.name, 'green'))
+        print("Mirror augmenting %s"%domain.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds
 
@@ -62,7 +65,6 @@ def get_classifier_config(args, model, dataset):
     config.cast_float_label = (domain.get_num_classes() == 1)
     config.classification = domain.get_num_classes() > 1
     config.stochastic_gradient = True
-    config.visualize = not args.no_visualize
     config.model = model
     config.logger = Logger()
 
@@ -72,16 +74,16 @@ def get_classifier_config(args, model, dataset):
     
     if hasattr(model, 'train_config'):
         model_train_config = model.train_config()
-        for key, value in model_train_config.iteritems():
+        for key, value in model_train_config.items():
             print('Overriding config.%s'%key)
             config.__setattr__(key, value)
 
     return config
 
-def train_classifier(args, model, dataset):
-    config = get_classifier_config(args, model, dataset)
+def train_classifier(args, model, domain):
+    config = get_classifier_config(args, model, domain)
 
-    home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, dataset.name, model_setup=True, suffix_str='base')
+    home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, domain.name, model_setup=True, suffix_str='base')
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
     if not os.path.isdir(home_path):
@@ -107,12 +109,6 @@ def train_classifier(args, model, dataset):
             train_loss = config.logger.get_measure('train_loss').mean_epoch()
             config.scheduler.step(train_loss)
 
-            if config.visualize:
-                # Show the average losses for all the phases in one figure.
-                config.logger.visualize_average_keys('.*_loss', 'Average Loss', trainer.visdom)
-                config.logger.visualize_average_keys('.*_accuracy', 'Average Accuracy', trainer.visdom)
-                config.logger.visualize_average('LRs', trainer.visdom)
-
             test_average_acc = config.logger.get_measure('test_accuracy').mean_epoch()
 
             # Save the logger for future reference.
@@ -120,19 +116,17 @@ def train_classifier(args, model, dataset):
 
             # Saving a checkpoint. Enable if needed!
             # if args.save and epoch % 10 == 0:
-            #     print('Saving a %s at iter %s'%(colored('snapshot', 'yellow'), colored('%d'%epoch, 'yellow')))
+            #     print('Saving a %s at iter %s'%('snapshot', '%d'%epoch))
             #     torch.save(config.model.state_dict(), os.path.join(home_path, 'model.%d.pth'%epoch))
 
             if args.save and best_accuracy < test_average_acc:
-                print('Updating the on file model with %s'%(colored('%.4f'%test_average_acc, 'red')))
+                print('Updating the on file model with %s'%('%.4f'%test_average_acc))
                 best_accuracy = test_average_acc
                 torch.save(config.model.state_dict(), hbest_path)
         
         torch.save({'finished':True}, hbest_path + ".done")
-        if config.visualize:
-            trainer.visdom.save([trainer.visdom.env])
     else:
-        print("Skipping %s"%(colored(home_path, 'yellow')))
+        print("Skipping %s"%(home_path))
 
     print("Loading the best model.")
     config.model.load_state_dict(torch.load(hbest_path))
@@ -140,4 +134,4 @@ def train_classifier(args, model, dataset):
 
     trainer.run_epoch(0, phase='all')
     test_average_acc = config.logger.get_measure('all_accuracy').mean_epoch(epoch=0)
-    print("All average accuracy %s"%colored('%.4f%%'%(test_average_acc*100), 'red'))
+    print("All average accuracy %s"%'%.4f%%'%(test_average_acc*100))

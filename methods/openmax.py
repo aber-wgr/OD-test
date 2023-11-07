@@ -17,8 +17,6 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.stats import exponweib
-from tqdm import tqdm
-from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -239,13 +237,13 @@ class OpenMax(ProbabilityThreshold):
 
     def get_H_config(self, dataset, will_train=True):
         print("Preparing training D1+D2 (H)")
-        print("Mixture size: %s"%colored('%d'%len(dataset), 'green'))
+        print("Mixture size: %s"%'%d'%len(dataset))
 
         # 80%, 20% for local train+test
         train_ds, valid_ds = dataset.split_dataset(0.8)
 
         if self.args.D1 in Global.mirror_augment:
-            print(colored("Mirror augmenting %s"%self.args.D1, 'green'))
+            print("Mirror augmenting %s"%self.args.D1)
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds
 
@@ -297,8 +295,7 @@ class OpenMax(ProbabilityThreshold):
         config.criterion = criterion
         config.classification = True
         config.cast_float_label = True
-        config.stochastic_gradient = True
-        config.visualize = not self.args.no_visualize  
+        config.stochastic_gradient = True  
         config.model = model
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=1.0/len(train_ds))
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)

@@ -1,6 +1,5 @@
 from __future__ import print_function
 from os import path
-from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -11,7 +10,6 @@ import models as Models
 from datasets import MirroredDataset
 from methods.score_svm import ScoreSVM
 
-from tqdm import tqdm
 
 class KNNModel(nn.Module):
     """
@@ -66,7 +64,7 @@ class KNNSVM(ScoreSVM):
             self.base_model = None
 
         if dataset.name in Global.mirror_augment:
-            print(colored("Mirror augmenting %s"%dataset.name, 'green'))
+            print("Mirror augmenting %s"%dataset.name)
             new_train_ds = dataset + MirroredDataset(dataset)
             dataset = new_train_ds
         
@@ -152,12 +150,12 @@ class AEKNNSVM(ScoreSVM):
 
         hbest_path = path.join(home_path, 'model.best.pth')
         best_h_path = hbest_path
-        print(colored('Loading H1 model from %s'%best_h_path, 'red'))
+        print('Loading H1 model from %s'%best_h_path)
         base_model.load_state_dict(torch.load(best_h_path))
         base_model.eval()
 
         if dataset.name in Global.mirror_augment:
-            print(colored("Mirror augmenting %s"%dataset.name, 'green'))
+            print("Mirror augmenting %s"%dataset.name)
             new_train_ds = dataset + MirroredDataset(dataset)
             dataset = new_train_ds
 

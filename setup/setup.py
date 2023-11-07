@@ -12,9 +12,7 @@ requirements = 'setup/requirements.txt'
 datastore = {
         'default':{
             'datasets':{
-                },
-            'visdom':{
-                },
+                }
             }
         }
 
@@ -59,26 +57,25 @@ def setup_workspace():
     print('Installed requirements.')
 
     # Set up symlinks and project folders.
-    from termcolor import colored
-    print('Setting up for {}'.format(colored(hostname, 'red')))
+
+    print('Setting up for {}'.format(hostname))
 
     paths = None
     if hostname not in datastore:
-        print("""Hostname {} is not setup. Using default Cluster""".format(colored(hostname, 'red')))
+        print("""Hostname {} is not setup. Using default Cluster""".format(hostname))
         paths = datastore['default']
     else:
         paths = datastore[hostname]
 
     for parent, files in paths.items():
-        print('Preparing {}'.format(colored(parent)))
+        print('Preparing {}'.format(parent))
         parent_path = os.path.join(workspace_path, parent)
         if not os.path.isdir(parent_path):
             os.makedirs(parent_path)
 
         for key, value in files.items():
             target_path = os.path.join(parent_path, key)
-            print('\t{} -> {}'.format(colored(target_path, 'green'),
-                colored(value, 'blue')))
+            print('\t{} -> {}'.format(target_path,value))
             if not os.path.islink(target_path):
                 os.system('ln -s "{}" "{}"'.format(value, target_path))
     print('Setting up symlinks finished.')

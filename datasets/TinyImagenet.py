@@ -242,7 +242,7 @@ class TinyImagenet(AbstractDomainInterface):
         if os.path.isfile(index_file):
             train_indices = torch.load(index_file)
         else:
-            print(colored('GENERATING PERMUTATION FOR <TinyImagenet train>', 'red'))
+            print('GENERATING PERMUTATION FOR <TinyImagenet train>')
             train_indices = torch.randperm(len(self.ds_train))
             torch.save(train_indices, index_file)
 

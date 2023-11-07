@@ -1,6 +1,5 @@
 from __future__ import print_function
 import os
-from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -49,7 +48,7 @@ def get_pcnn_config(args, model, domain):
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
     if dataset.name in Global.mirror_augment:
-        print(colored("Mirror augmenting %s"%dataset.name, 'green'))
+        print("Mirror augmenting %s"%dataset.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds
 
@@ -90,7 +89,6 @@ def get_pcnn_config(args, model, domain):
     config.cast_float_label = False
     config.autoencoder_target = True
     config.stochastic_gradient = True
-    config.visualize = not args.no_visualize
     config.model = model
     config.logger = Logger()
     config.sampler = lambda x: sample(x.model, 32, obs)
@@ -101,12 +99,11 @@ def get_pcnn_config(args, model, domain):
     
     if hasattr(model, 'train_config'):
         model_train_config = model.train_config()
-        for key, value in model_train_config.iteritems():
+        for key, value in model_train_config.items():
             print('Overriding config.%s'%key)
             config.__setattr__(key, value)
 
     return config
-
 
 def train_pixelcnn(args, model, dataset):
     home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset.name, model_setup=True, suffix_str=model.netid)
@@ -119,7 +116,7 @@ def train_pixelcnn(args, model, dataset):
     if not os.path.isfile(hbest_path+".done"):
         config = get_pcnn_config(args, model, dataset)
         trainer = IterativeTrainer(config, args)
-        print(colored('Training from scratch', 'green'))
+        print('Training from scratch')
         best_loss = 999999999
         for epoch in range(1, config.max_epoch+1):
 
@@ -137,30 +134,21 @@ def train_pixelcnn(args, model, dataset):
 
             config.scheduler.step(train_loss)
 
-            if config.visualize:
-                # Show the average losses for all the phases in one figure.
-                config.logger.visualize_average_keys('.*_loss', 'Average Loss', trainer.visdom)
-                config.logger.visualize_average('LRs', trainer.visdom)
-                samples = config.sampler(config)
-                trainer.visdom.images(samples.cpu(), win='sample_images')
-
             # Save the logger for future reference.
             torch.save(config.logger.measures, os.path.join(home_path, 'logger.pth'))
 
             # Saving a checkpoint. Enable if needed!
             # if args.save and epoch % 10 == 0:
-            #     print('Saving a %s at iter %s'%(colored('snapshot', 'yellow'), colored('%d'%epoch, 'yellow')))
+            #     print('Saving a %s at iter %s'%('snapshot', '%d'%epoch))
             #     torch.save(config.model.state_dict(), os.path.join(home_path, 'model.%d.pth'%epoch))
 
             if args.save and test_loss < best_loss:
-                print('Updating the on file model with %s'%(colored('%.4f'%test_loss, 'red')))
+                print('Updating the on file model with %s'%('%.4f'%test_loss))
                 best_loss = test_loss
                 torch.save(config.model.state_dict(), hbest_path)
         
         torch.save({'finished':True}, hbest_path+".done")
         torch.save(config.model.state_dict(), hlast_path)
 
-        if config.visualize:
-            trainer.visdom.save([trainer.visdom.env])
     else:
-        print("Skipping %s"%(colored(home_path, 'yellow')))
+        print("Skipping %s"%(home_path))

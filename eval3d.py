@@ -101,18 +101,18 @@ if __name__ == "__main__":
                     print ('DS2:%s is not compatible with DS1:%s, skipping.'%(ds2.name, ds1.name))
                     continue
 
-                print ("Performing %s on %s vs. %s-%s"%(colored(method, 'green'), colored(d1, 'blue'), colored(d2, 'red'), colored(d3, 'red')))
+                print ("Performing %s on %s vs. %s-%s"%(method, d1,d2,d3))
 
                 if has_done_before(method, d1, d2, d3):
-                    print (colored("Skipped, has been done before.", 'yellow'))
+                    print ("Skipped, has been done before.")
                     continue
 
                 ds3 = ds_cache[args.D3]
 
                 if not ds3.is_compatible(ds1):
                     print ('%s is not compatible with %s, skipping.'
-                            %(colored(ds3.name, 'red'),
-                              colored(ds1.name, 'red')))
+                            %(ds3.name,
+                              ds1.name))
                     continue
 
                 valid_mixture = None

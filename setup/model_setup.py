@@ -1,5 +1,4 @@
 import os,sys,inspect
-from termcolor import colored
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -16,7 +15,7 @@ import categories.ae_setup as AESetup
 import categories.pixelcnn_setup as PCNNSetup
 
 if args.exp != 'model_ref':
-    print(colored('The exp is NOT model_ref!', 'yellow'))
+    print('The exp is NOT model_ref!')
 
 def needs_processing(args, dataset_class, models, suffix):
     """
@@ -24,7 +23,7 @@ def needs_processing(args, dataset_class, models, suffix):
     """
     for model in models:
         for suf in suffix:
-            home_path = Models.get_ref_model_path(args, model.__name__, dataset_class.__name__, model_setup=True, suffix_str=suf)
+            home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset_class.__name__, model_setup=True, suffix_str=suf)
             hbest_path = os.path.join(home_path, 'model.best.pth.done')
             if not os.path.isfile(hbest_path):
                 return True
@@ -38,14 +37,14 @@ if __name__ == "__main__":
         # whether we have done them before without instantiating the network architecture or dataset.
         # saves quite a lot of time when possible.
         (Global.dataset_reference_classifiers, CLSetup.train_classifier,            True, ['base']),
-        (Global.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
-        (Global.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
+        #(Global.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
+        #(Global.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
         (Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
         (Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
         #(Global.dataset_reference_waes, AESetup.train_BCE_WAE,                      False, []),
         #(Global.dataset_reference_waes, AESetup.train_MSE_WAE,                      False, []),
         (Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
-        (Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
+        #(Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
     ]
 
     # Do a for loop to run the training tasks.

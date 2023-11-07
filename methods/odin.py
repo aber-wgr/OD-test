@@ -18,7 +18,6 @@ from __future__ import print_function
 import os
 import os.path as path
 import timeit
-from termcolor import colored
 
 import torch
 import torch.nn as nn
@@ -171,7 +170,6 @@ class ODIN(ProbabilityThreshold):
         config.classification = True
         config.cast_float_label = True
         config.stochastic_gradient = True
-        config.visualize = not self.args.no_visualize  
         config.model = model
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-2, weight_decay=0)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=5, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)
@@ -189,7 +187,7 @@ class ODIN(ProbabilityThreshold):
         train_ds, valid_ds = dataset.split_dataset(0.8)
         
         if self.args.D1 in Global.mirror_augment:
-            print(colored("Mirror augmenting %s"%self.args.D1, 'green'))
+            print("Mirror augmenting %s"%self.args.D1)
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds
 
@@ -214,7 +212,7 @@ class ODIN(ProbabilityThreshold):
             for i_eps, eps in enumerate(all_epsilons):
                 for i_temp, temp in enumerate(all_temperatures):
                     so_far = i_eps * len(all_temperatures) + i_temp + 1
-                    print(colored('Checking eps=%.2e temp=%.1f (%d/%d)'%(eps, temp, so_far, total_params), 'green'))
+                    print('Checking eps=%.2e temp=%.1f (%d/%d)'%(eps, temp, so_far, total_params))
                     start_time = timeit.default_timer()
 
                     h_config = self.get_H_config(train_ds=train_ds, valid_ds=valid_ds,
@@ -222,7 +220,7 @@ class ODIN(ProbabilityThreshold):
 
                     trainer = IterativeTrainer(h_config, self.args)
 
-                    print(colored('Training from scratch', 'green'))
+                    print('Training from scratch')
                     trainer.run_epoch(0, phase='test')
                     for epoch in range(1, h_config.max_epoch+1):
                         trainer.run_epoch(epoch, phase='train')
@@ -239,19 +237,11 @@ class ODIN(ProbabilityThreshold):
                         if hasattr(h_config.model, 'H') and hasattr(h_config.model.H, 'threshold'):
                             h_config.logger.log('threshold', h_config.model.H.threshold.cpu().numpy(), epoch-1)
                             h_config.logger.get_measure('threshold').legend = ['threshold']
-                            if h_config.visualize:
-                                h_config.logger.get_measure('threshold').visualize_all_epochs(trainer.visdom)
-
-                        if h_config.visualize:
-                            # Show the average losses for all the phases in one figure.
-                            h_config.logger.visualize_average_keys('.*_loss', 'Average Loss', trainer.visdom)
-                            h_config.logger.visualize_average_keys('.*_accuracy', 'Average Accuracy', trainer.visdom)
-                            h_config.logger.visualize_average('LRs', trainer.visdom)
-
+                            
                         test_average_acc = h_config.logger.get_measure('test_accuracy').mean_epoch()
 
                         if best_accuracy < test_average_acc:
-                            print('Updating the on file model with %s'%(colored('%.4f'%test_average_acc, 'red')))
+                            print('Updating the on file model with %s'%('%.4f'%test_average_acc))
                             best_accuracy = test_average_acc
                             torch.save(h_config.model.H.state_dict(), h_path)
 
@@ -268,14 +258,14 @@ class ODIN(ProbabilityThreshold):
             trainer = IterativeTrainer(h_config, self.args)
 
         # Load the best model.
-        print(colored('Loading H model from %s'%h_path, 'red'))
+        print('Loading H model from %s'%h_path)
         h_config.model.H.load_state_dict(torch.load(h_path))
         h_config.model.set_eval_direct(False)        
-        print('Temperature %s Epsilon %s'%(colored(h_config.model.H.temperature.item(),'red'), colored(h_config.model.H.epsilon.item(), 'red')))
+        print('Temperature %s Epsilon %s'%(h_config.model.H.temperature.item(), h_config.model.H.epsilon.item()))
 
         trainer.run_epoch(0, phase='testU')
         test_average_acc = h_config.logger.get_measure('testU_accuracy').mean_epoch(epoch=0)
-        print("Valid/Test average accuracy %s"%colored('%.4f%%'%(test_average_acc*100), 'red'))
+        print("Valid/Test average accuracy %s"%'%.4f%%'%(test_average_acc*100))
         self.H_class = h_config.model
         self.H_class.eval()
         self.H_class.set_eval_direct(False)        

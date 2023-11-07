@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 from argparse import ArgumentParser
-from termcolor import colored
 import os
 import os.path as path
 import sys
@@ -14,7 +13,7 @@ parser.add_argument('--force-out', default=False, action='store_true', help='For
 args = parser.parse_args()
 
 workspace_path = os.path.abspath('workspace')
-assert os.path.isdir(workspace_path), colored('Have you run setup.py?', 'red')
+assert os.path.isdir(workspace_path), 'Have you run setup.py?'
 
 exp_list = args.in_exp.split(',')
 exp_paths = []
@@ -42,7 +41,7 @@ for exp_id in exp_list:
     results_path = path.join(workspace_path, 'experiments', exp_id, 'results.pth')
     if path.isfile(results_path):
         exp_ids.append(exp_id)
-        print('Processing %s'%(colored(results_path, 'yellow')))
+        print('Processing %s'%(results_path))
         sub_results = torch.load(results_path)
         print('\t There are %d records.'%(len(sub_results)))
         for r in sub_results:
@@ -69,11 +68,11 @@ else:
 print('Saving results to %s'%output_folder)
 
 total = 0
-for method, count in method_count.iteritems():
-    print ('%25s\t%-5s'%(method, colored('%d'%count, 'green')))
+for method, count in method_count.items():
+    print ('%25s\t%-5s'%(method, '%d'%count))
     total += count
-print('%s'%colored('-'*37, 'red'))
-print('%25s\t%-5s'%('Total', colored('%d'%total, 'green')))
+print('%s'%'-'*37)
+print('%25s\t%-5s'%('Total', '%d'%total))
 
 torch.save(results, path.join(output_folder, 'results.pth'))
 torch.save(exp_ids, path.join(output_folder, 'ids.pth'))
