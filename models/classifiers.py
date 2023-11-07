@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.models.vgg as VGG
 import torchvision.models.resnet as Resnet
+import torchvision.models.densenet as Densenet
 
 class Scaled_VGG(nn.Module):
 
