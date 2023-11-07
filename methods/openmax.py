@@ -13,8 +13,6 @@
     This is not an efficient implementation. Specifically, OTModelWrapper.subnetwork_eval can be improved.
     We decided to keep the structure to the original source code as much as possible.
 """
-from __future__ import print_function
-
 import numpy as np
 from scipy.stats import exponweib
 

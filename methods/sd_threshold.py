@@ -1,5 +1,3 @@
-#from __future__ import print_function
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -13,8 +11,6 @@ from os import path
 from methods import AbstractMethodInterface, AbstractModelWrapper, SVMLoss
 from datasets import MirroredDataset
 import global_vars as Global
-
-import pdb
 
 class SDModelWrapper(AbstractModelWrapper):
     """ The wrapper class for H.

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from argparse import ArgumentParser
 import os
 import os.path as path

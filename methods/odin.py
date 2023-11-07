@@ -14,7 +14,6 @@
 [1] S. Liang, Y. Li, and R. Srikant, "Enhancing The Reliability of Out-of-distribution Image Detection in Neural Networks" ICLR, 2018
 """
 
-from __future__ import print_function
 import os
 import os.path as path
 import timeit
