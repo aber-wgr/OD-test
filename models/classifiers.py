@@ -74,7 +74,7 @@ class Scaled_VGG(nn.Module):
         #torchinfo.summary(self.model, col_names=["kernel_size", "input_size", "output_size", "num_params"], input_size=(32, self.scale[0], self.scale[1], self.scale[2]))
 
         if(init_weights):
-            self.model._initialize_weights()
+            self._initialize_weights()
         
         self.epochs = epochs
 
@@ -105,6 +105,20 @@ class Scaled_VGG(nn.Module):
     # because the model is split, we need to know which device the outputs go to put the labels on so the loss function can do the comparison
     def get_output_device(self):
         return self.dev2
+    
+    def _initialize_weights(self) -> None:
+        for m in self.modules():
+
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
 
     def train_config(self):
         config = {}

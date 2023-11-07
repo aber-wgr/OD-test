@@ -1,9 +1,5 @@
-http://download.pytorch.org/whl/cu91/torch-0.4.0-cp27-cp27mu-linux_x86_64.whl
-torchvision==0.2.1
-argparse
 pytablewriter
-git+https://github.com/mwaskom/seaborn.git
-enum34
+mumpy
 scipy
-cffi
+matplotlib
 sklearn
