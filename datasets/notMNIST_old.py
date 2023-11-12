@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import os.path
 import errno
@@ -11,9 +10,6 @@ from datasets import SubDataset, AbstractDomainInterface
 
 """
     This is a modified copy of the MNIST dataset to implement the NotMNIST dataset.
-    NotMNIST is no longer available from its original source and is only reliably retrievable from sources which require signups such as Kaggle and ActiveLoop.
-    The dataset is available at http://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz, but this is in a different format than the original dataset.
-    This version of the notMNIST dataset loader class is designed to compile the values in that file into a format that is as closely compatible with the original setup as possible.
 """
 
 class NotMNISTParent(data.Dataset):
@@ -33,7 +29,7 @@ class NotMNISTParent(data.Dataset):
             target and transforms it.
     """
     urls = [
-        'http://commondatastorage.googleapis.com/books1000/notMNIST_small.tar.gz',
+        'http://yaroslavvb.com/upload/notMNIST/notMNIST_small.mat',
     ]
     raw_folder = 'raw'
     processed_folder = 'processed'
@@ -45,7 +41,7 @@ class NotMNISTParent(data.Dataset):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
-        self.train = True  # training set or test set
+        self.train = train  # training set or test set
 
         if download:
             self.download()
@@ -71,7 +67,7 @@ class NotMNISTParent(data.Dataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        #img = Image.fromarray(img.numpy(), mode='L')
+        img = Image.fromarray(img.numpy(), mode='L')
 
         if self.transform is not None:
             img = self.transform(img)
@@ -106,7 +102,7 @@ class NotMNISTParent(data.Dataset):
             else:
                 raise
 
-        if not os.path.exists(os.path.join(self.root, self.raw_folder, 'notMNIST_small.tar.gz')):
+        if not os.path.exists(os.path.join(self.root, self.raw_folder, 'notMNIST_small.mat')):
             for url in self.urls:
                 print('Downloading ' + url)
                 data = urllib.request.urlopen(url)
@@ -117,49 +113,18 @@ class NotMNISTParent(data.Dataset):
 
         # process and save as torch files
         print('Processing...')
+        import scipy.io as sio
 
-        images = []
-        labels = []
-
-        file_path = os.path.join(self.root, self.raw_folder, 'notMNIST_small.tar.gz')
-
-        extract_path = os.path.join(self.root, self.raw_folder)
-        output_path = os.path.join(extract_path, 'notMNIST_small')
-        if not os.path.isdir(output_path):
-            import tarfile
-            with tarfile.open(file_path, 'r') as f:
-                f.extractall(extract_path)
-
-        rr = os.path.join(self.root, self.processed_folder, self.training_file)
-
-        if not os.path.exists(rr):
-            classes = [d for d in os.listdir(output_path) if os.path.isdir(os.path.join(output_path, d))]
-            classes.sort()
-            class_to_idx = {classes[i]: i for i in range(len(classes))}
-
-            for d in classes:
-                files = [f for f in os.listdir(os.path.join(output_path, d)) if os.path.isfile(os.path.join(output_path, d, f))]
-                for f in files:
-                    ppath = os.path.join(output_path, d, f)
-                    # catch weird cases where the file is size 0 in the downloaded data
-                    if(os.path.getsize(ppath) > 0):
-                        img = Image.open(ppath)
-                        img = img.convert('L')
-                        images.append(img)
-                        labels.append(class_to_idx[d])
-
-        #import scipy.io as sio
-
-        #data = sio.loadmat(os.path.join(self.root, self.raw_folder, 'notMNIST_small.mat'))
-        #images = torch.ByteTensor(data['images']).permute(2, 0, 1) # The data is stored as HxWxN, need to permute!
-        #labels = torch.LongTensor(data['labels'])
+        data = sio.loadmat(os.path.join(self.root, self.raw_folder, 'notMNIST_small.mat'))
+        images = torch.ByteTensor(data['images']).permute(2, 0, 1) # The data is stored as HxWxN, need to permute!
+        labels = torch.LongTensor(data['labels'])
 
         data_set = (
             images,
             labels,
         )
 
-        with open(rr, 'wb') as f:
+        with open(os.path.join(self.root, self.processed_folder, self.training_file), 'wb') as f:
             torch.save(data_set, f)
 
         print('Done!')
@@ -182,28 +147,21 @@ class NotMNIST(AbstractDomainInterface):
                                          download=True)
 
         index_file = os.path.join('./datasets/permutation_files/', 'notmnist.pth')
-        self.all_indices = None
+        all_indices = None
         if os.path.isfile(index_file):
-            self.all_indices = torch.load(index_file)
+            all_indices = torch.load(index_file)
         else:
             print('GENERATING PERMUTATION FOR NOT MNIST')
-            self.all_indices = torch.randperm(18724)
-            torch.save(self.all_indices, index_file)
+            all_indices = torch.randperm(18724)
+            torch.save(all_indices, index_file)
 
-        self.D2_valid_ind = self.all_indices[0:9362]
-        self.D2_test_ind  = self.all_indices[9362:18724]
+        self.D2_valid_ind = all_indices[0:9362]
+        self.D2_test_ind  = all_indices[9362:18724]
     
-    def get_D2_train(self, D1):
-        assert self.is_compatible(D1)
-        return SubDataset(self.name, self.base_name, self.ds_train, self.all_indices, transform=D1.conformity_transform())
-
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.base_name, self.ds_train, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.ds_train, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
 
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.base_name, self.ds_train, self.D2_test_ind, label=1, transform=D1.conformity_transform())
-
-    def get_num_classes(self):
-        return 10
+        return SubDataset(self.name, self.ds_train, self.D2_test_ind, label=1, transform=D1.conformity_transform())
