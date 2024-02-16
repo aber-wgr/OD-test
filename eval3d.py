@@ -289,6 +289,10 @@ if __name__ == "__main__":
                             autoencoder_trainer = IterativeTrainer(autoencoder_config, args)
 
                             autoencoder_home_path = Models.get_ref_model_path(args, "combined_" + autoencoder_config.model.__class__.__name__, d1 + "_" + d2, model_setup=True, suffix_str='base')
+                            
+                            if not os.path.isdir(autoencoder_home_path):
+                                os.makedirs(autoencoder_home_path)
+                            
                             autoencoder_hbest_path = os.path.join(autoencoder_home_path, 'model.best.pth')
 
                             best_loss = 999999999
@@ -306,32 +310,33 @@ if __name__ == "__main__":
                                     
                                     torch.set_grad_enabled(True)
                                     # run the samples
-                                    for i, (sample, label) in enumerate(autoencoder_config.train_loader):
-                                        x = sample.to(args.device)
+                                    #for i, (sample, label) in enumerate(autoencoder_config.train_loader):
+                                    #    x = sample.to(args.device)
                                         
-                                        torch.set_grad_enabled(True)
+                                    #    torch.set_grad_enabled(True)
 
-                                        # run the autoencoder
-                                        autoencoder_config.model.train()
-                                        autoencoder_config.optim.zero_grad()
+                                    #    # run the autoencoder
+                                    #    autoencoder_config.model.train()
+                                    #    autoencoder_config.optim.zero_grad()
                                         
-                                        output = autoencoder_config.model(x)
+                                    #    output = autoencoder_config.model(x)
                                     
                                         # calculate the base VAE loss (reconstruction loss + KL loss)
-                                        loss = autoencoder_config.criterion(output, x)
+                                    #    loss = autoencoder_config.criterion(output, x)
                             
-                                        loss.backward()
-                                        autoencoder_config.optim.step()
-
-                                        torch.set_grad_enabled(False)
-                                        autoencoder_trainer.run_epoch(epoch, phase='test')
+                                    #    loss.backward()
+                                    #    autoencoder_config.optim.step()
                                         
-                                        test_loss = autoencoder_config.logger.get_measure('test_loss').mean_epoch()
+                                    autoencoder_trainer.run_epoch(epoch, phase='train')                
+                                    autoencoder_trainer.run_epoch(epoch, phase='test')
+                                    
+                                    train_loss = autoencoder_config.logger.get_measure('train_loss').mean_epoch()
+                                    test_loss = autoencoder_config.logger.get_measure('test_loss').mean_epoch()
 
                                     # Save the logger for future reference.
-                                    torch.save(autoencoder_config.logger.measures, os.path.join(autoencoder_home_path, 'logger.pth'))
+                                    #torch.save(autoencoder_config.logger.measures, os.path.join(autoencoder_home_path, 'logger.pth'))
 
-                                    if args.save and test_loss < best_loss:
+                                    if args.save and train_loss < best_loss:
                                         print('Updating the on file model with %s'%('%.4f'%test_loss))
                                         best_loss = test_loss
                                         torch.save(autoencoder_config.model.state_dict(), autoencoder_hbest_path)

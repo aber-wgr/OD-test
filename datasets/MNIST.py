@@ -26,11 +26,11 @@ class MNIST(AbstractDomainInterface):
         self.ds_train   = datasets.MNIST(root_path,
                                         train=True,
                                         transform=im_transformer,
-                                        download=True)
+                                        download=False)
         self.ds_test    = datasets.MNIST(root_path,
                                         train=False,
                                         transform=im_transformer,
-                                        download=True)
+                                        download=False)
     
     def get_D1_train(self):
         target_indices = self.D1_train_ind
