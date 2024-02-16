@@ -72,7 +72,6 @@ def get_dataset_scale(dataset):
     return scale
 
 
-
 """
     This where we keep a reference to all the models in the project.
 """
