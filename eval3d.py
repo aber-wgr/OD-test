@@ -6,6 +6,10 @@ import global_vars as Global
 import copy
 from setup.categories.ae_setup import get_vae_config
 from datasets import SubDataset
+from utils.iterative_trainer import IterativeTrainer
+import models as Models
+import models.autoencoders as AES
+
 
 #########################################################
 """
@@ -280,7 +284,7 @@ if __name__ == "__main__":
                             # Set up the config
                             autoencoder_config = get_vae_config(args, autoencoder_model(), d2_train_basis)
                             autoencoder_config.max_epoch = 30
-                            autoencoder_config.name = 'autoencoder_%s_%s'%(d2_train_basis.name, autoencoder_model.preferred_name())
+                            autoencoder_config.name = 'autoencoder_%s_%s'%(d2_train_basis.name, autoencoder_config.model.preferred_name())
 
                             autoencoder_trainer = IterativeTrainer(autoencoder_config, args)
 

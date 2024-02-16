@@ -10,9 +10,12 @@ import math
 """
 
 class Generic_AE(nn.Module):
-    def __init__(self, dims, max_channels=512, depth=10, n_hidden=256):
+    def __init__(self, dims, max_channels=512, depth=10, n_hidden=256,batchNorm=True):
         assert len(dims) == 3, 'Please specify 3 values for dims'
         super(Generic_AE, self).__init__()
+        
+        self.dev1 = torch.device('cuda:0')
+        self.dev2 = torch.device('cuda:0')
 
         kernel_size = 3
         all_channels = []
@@ -23,14 +26,16 @@ class Generic_AE(nn.Module):
         max_pool_layers = [i%2==0 for i in range(depth)]
         remainder_layers = []
         self.netid = 'max.%d.d.%d.nH.%d'%(max_channels, depth, n_hidden)
+        pad_py3 = (int)((kernel_size-1)/2)
 
         # encoder ###########################################
         modules = []
         in_channels = dims[0]
         in_spatial_size = dims[1]
         for i in range(depth):
-            modules.append(nn.Conv2d(in_channels, current_channels, kernel_size=kernel_size, padding=(kernel_size-1)/2))
-            modules.append(nn.BatchNorm2d(current_channels))
+            modules.append(nn.Conv2d(in_channels, current_channels, kernel_size=kernel_size, padding=pad_py3))
+            if batchNorm:
+                modules.append(nn.BatchNorm2d(current_channels))
             modules.append(nonLin())
             in_channels = current_channels
             all_channels.append(current_channels)
@@ -41,7 +46,7 @@ class Generic_AE(nn.Module):
                 in_spatial_size = math.floor(in_spatial_size/2)
 
         # Final layer
-        modules.append(nn.Conv2d(in_channels, n_hidden, kernel_size=kernel_size, padding=(kernel_size-1)/2))
+        modules.append(nn.Conv2d(in_channels, n_hidden, kernel_size=kernel_size, padding=pad_py3))
         modules.append(nn.BatchNorm2d(n_hidden))
         modules.append(nonLin())
         self.encoder = nn.Sequential(*modules)
@@ -50,12 +55,13 @@ class Generic_AE(nn.Module):
         modules = []
         in_channels = n_hidden
         if self.__class__ == Generic_VAE:
-            in_channels = in_channels / 2
+            in_channels = (int)(in_channels / 2)
         current_index = len(all_channels)-1
         r_ind = len(remainder_layers)-1
         for i in range(depth):
-            modules.append(nn.Conv2d(in_channels, all_channels[current_index], kernel_size=kernel_size, padding=(kernel_size-1)/2))
-            modules.append(nn.BatchNorm2d(all_channels[current_index]))
+            modules.append(nn.Conv2d(in_channels, all_channels[current_index], kernel_size=kernel_size, padding=pad_py3))
+            if batchNorm:
+                modules.append(nn.BatchNorm2d(all_channels[current_index]))
             modules.append(nonLin())
             if max_pool_layers[i]:
                 modules.append(nn.Upsample(scale_factor=2, mode='nearest'))
@@ -66,7 +72,7 @@ class Generic_AE(nn.Module):
             in_channels = all_channels[current_index]
             current_index -= 1
         # Final layer
-        modules.append(nn.Conv2d(in_channels, dims[0], kernel_size=kernel_size, padding=(kernel_size-1)/2))
+        modules.append(nn.Conv2d(in_channels, dims[0], kernel_size=kernel_size, padding=pad_py3))
         self.decoder = nn.Sequential(*modules)
 
     def encode(self, x):
@@ -81,20 +87,23 @@ class Generic_AE(nn.Module):
         if sigmoid or self.default_sigmoid:
             dec = F.sigmoid(dec)
         return dec
-
+        
+    def get_output_device(self):
+        return self.dev2
+        
     def train_config(self):
         config = {}
         config['optim']     = optim.Adam(self.parameters(), lr=1e-3)
         config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-3, min_lr=1e-6, factor=0.1, verbose=True)
-        config['max_epoch'] = 240 * self.epoch_factor
+        config['max_epoch'] = int(120)
         return config
 
     def preferred_name(self):
         return self.__class__.__name__+"."+self.netid
 
 class Generic_VAE(Generic_AE):
-    def __init__(self, dims, max_channels=512, depth=10, n_hidden=256):
-        super(Generic_VAE, self).__init__(dims, max_channels, depth, 2*n_hidden)
+    def __init__(self, dims, max_channels=512, depth=10, n_hidden=256,batchNorm=True):
+        super(Generic_VAE, self).__init__(dims, max_channels, depth, 2*n_hidden, batchNorm)
         self.fc_e_mu  = nn.Linear(2*n_hidden, n_hidden)
         self.fc_e_std = nn.Linear(2*n_hidden, n_hidden)
 
@@ -111,6 +120,15 @@ class Generic_VAE(Generic_AE):
         h_out = self.encoder(x)
         code  = self.fc_e_mu(h_out.view(n_samples, -1))
         return code
+        
+    def decode(self,x):
+        '''split-out decode the latent space'''
+        n_samples = x.size(0)
+        z = x.view(x.size(0), x.size(1), 1, 1)
+        h_out = self.decoder(z)
+        sig = nn.Sigmoid()
+        dec = sig(h_out)
+        return dec
 
     def forward(self, x):
         enc     = self.encoder(x)
@@ -119,8 +137,9 @@ class Generic_VAE(Generic_AE):
         self.last_mu  = mu
         self.last_std = logvar
         z           = self.reparameterize(mu, logvar)        
-        dec = self.decoder(z.view(n_size, enc.size(1)/2, enc.size(2), enc.size(3)))
-        dec = F.sigmoid(dec)
+        dec = self.decoder(z.view(n_size, (int)(enc.size(1)/2), enc.size(2), enc.size(3)))
+        sig = nn.Sigmoid()
+        dec = sig(dec)
         return dec
 
 class VAE_Loss(nn.Module):
