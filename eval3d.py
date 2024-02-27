@@ -479,6 +479,7 @@ if __name__ == "__main__":
                             for i in range(final_len):
                                 # get the latent space representations of the two points
                                 latent1 = d2_test_latent[i]
+                                pdb.set_trace()
                                 latent2 = d3_test_latent[i]
 
                                 # interpolate between them
@@ -488,7 +489,7 @@ if __name__ == "__main__":
                                 decoded = autoencoder_config.model.decode(interpolated)
 
                                 # add the decoded point to the test set
-                                d2_test.append(decoded)
+                                d2_test.append(decoded,0)
                                 
                             print("Redecoded points run")
                             print(torch.cuda.memory_summary(0))
