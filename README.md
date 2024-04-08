@@ -2,12 +2,14 @@
 
 This is a development of Shafei's original OD-test. The goal is to achieve the following:
 - Upgrade to Python 3 and latest Pytorch & CUDA. (Done)
-- Removal of libraries not easily usable in a serialized/HPC context such as termcolor and visdom. (Done)
-- Add in more support for Model Parallel (done) and Distributed Pytorch (coming).
-- Add new models, methods etc from the huge number published since Shafei's paper. (In progress - Densenet and ResNext added, energy models and attention to come)
+- General cleanup: Fixed missing datasets, removal of libraries not easily usable in a serialized/HPC context such as termcolor and visdom, moved over to newer ways of addressing things (Done)
 - Replace the classifier-dataset pairing with a factory class that generates a classifer as needed (Done)
+- Add new models, methods etc from the huge number published since Shafei's paper. (In progress - Densenet and ResNext added, energy models and attention to come)
+- Non-binary classification: Holdout class training and testing (Done)
 - Experiments driven from JSON files rather than code (Done)
 - Add support for medical datasets such as OMI-DB and ISIC2018/9 (Done)
+- Add in more support for split models with streaming for Model Parallel (done)
+- Add in Distributed Pytorch and support for SLURM (coming).
 
 I'll update this readme as we go.
 
