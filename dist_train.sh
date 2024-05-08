@@ -5,11 +5,11 @@
 #gpus
 #SBATCH --gres=gpu:2
 #job name
-#SBATCH --job-name=qta-opti
+#SBATCH --job-name=OD-test2
 # job stdout file
-#SBATCH --output=qta-opti.out.%J
+#SBATCH --output=odtest2.out.%J
 # job stderr file
-#SBATCH --error=qta-opti.err.%J
+#SBATCH --error=odtest2.err.%J
 # maximum job time in D-HH:MM
 #SBATCH --time=2-00:00
 # number of tasks you are requesting
