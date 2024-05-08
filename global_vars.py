@@ -114,7 +114,7 @@ dataset_reference_classifiers = {
     'CIFAR100':               [ModelFactory(VGG_modeltype, scale=(3,32,32), classes=100, epochs=60), ModelFactory(ResNet_modeltype, scale=(3,32,32), classes=100, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3,32,32), classes=100, epochs=60)],
     'STL10':                  [ModelFactory(VGG_modeltype, scale=(3, 96, 96), classes=10, epochs=60), ModelFactory(ResNet_modeltype, scale=(3, 96, 96), classes=10, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3, 96, 96), classes=10, epochs=60)],
     'TinyImagenet':           [ModelFactory(VGG_modeltype, scale=(3, 64, 64), classes=200, epochs=60), ModelFactory(ResNet_modeltype, scale=(3, 64, 64), classes=200, epochs=60), ModelFactory(CLS.Scaled_ResNext, scale=(3, 64, 64), classes=200, epochs=60)],
-    'OMIDB':                  [ModelFactory(VGG_modeltype, scale=(1, 256, 256), classes=5, epochs=80), ModelFactory(ResNet_modeltype, scale=(1, 256, 256), classes=5, epochs=80), ModelFactory(CLS.Scaled_ResNext, scale=(1, 256, 256), classes=5, epochs=80)],
+    #'OMIDB':                  [ModelFactory(VGG_modeltype, scale=(1, 256, 256), classes=5, epochs=80), ModelFactory(ResNet_modeltype, scale=(1, 256, 256), classes=5, epochs=80), ModelFactory(CLS.Scaled_ResNext, scale=(1, 256, 256), classes=5, epochs=80)],
 }
 
 dataset_reference_autoencoders = {
@@ -124,7 +124,7 @@ dataset_reference_autoencoders = {
     'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
-    'OMIDB':              [ModelFactory(AES.Generic_AE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
+    #'OMIDB':              [ModelFactory(AES.Generic_AE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_vaes = {
@@ -134,7 +134,7 @@ dataset_reference_vaes = {
     'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
-    'OMIDB':              [ModelFactory(AES.Generic_VAE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
+    #'OMIDB':              [ModelFactory(AES.Generic_VAE, dims=(1, 256, 256), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_pcnns = {

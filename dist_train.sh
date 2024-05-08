@@ -49,7 +49,7 @@ export NCCL_MIN_CHANNELS=32
 echo "Run Started at:- "
 date
 
-srun singularity exec --nv ~/Containers/Singularity_Pytorch_QTA.sif /bin/bash ./sing.sh
+srun singularity exec --nv ~/Containers/Singularity_Pytorch_QTA.sif /bin/bash ./sing_setup.sh
 
 echo "Run Finished at:- "
 date
