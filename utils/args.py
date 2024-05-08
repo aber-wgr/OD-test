@@ -36,6 +36,15 @@ parser.add_argument('--unseen-class-test', default=False, action='store_true', h
 
 parser.add_argument('--drop-class', default=None, type=int, help='skip this class during training (used for unseen class test)')
 
+parser.add_argument('--no-wandb', action='store_true', help='Do not use Weights & Biases')
+
+parser.add_argument('--wandb-project', default='OD-Test2', help='Project name for Weights & Biases')
+
+# distributed training parameters
+parser.add_argument('--world_size', default=1, type=int,
+                    help='number of distributed processes')
+parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
+
 args = parser.parse_args()
 args.experiment_id = args.exp
 

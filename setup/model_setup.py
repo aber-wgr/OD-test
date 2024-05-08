@@ -14,6 +14,11 @@ import categories.deep_ensemble_setup as DeepEnsembleSetup
 import categories.ae_setup as AESetup
 import categories.pixelcnn_setup as PCNNSetup
 
+import utils.distributed as distrib 
+import torch
+import wandb
+from utils.distributedproxysampler import DistributedProxySampler
+
 if args.exp != 'model_ref':
     print('The exp is NOT model_ref!')
 
@@ -30,6 +35,21 @@ def needs_processing(args, dataset_class, models, suffix):
     return False
 
 if __name__ == "__main__":
+
+    distrib.init_distributed_mode(args)
+
+    if (distrib.is_main_process() and not args.no_wandb):
+        wandb.init(project=args.wandb_project, entity="aber-wgr")
+
+    # Set the seed for reproducibility.
+    seed = args.seed + distrib.get_rank()
+    torch.manual_seed(seed)
+
+    num_tasks = distrib.get_world_size()
+    global_rank = distrib.get_rank()
+    
+    if (distrib.is_main_process()  and not args.no_wandb):
+        wandb.config.update(args)
 
     task_list = [
         # The list of models,   The function that does the training,    Can I skip-test?,   suffix of the operation.

@@ -14,6 +14,10 @@ from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
 from datasets import MirroredDataset
 
+import utils.distributed as distrib 
+import wandb
+from utils.distributedproxysampler import DistributedProxySampler
+
 def get_classifier_config(args, model, domain):
     print("Preparing training D1 for %s"%(domain.name))
 
@@ -41,13 +45,28 @@ def get_classifier_config(args, model, domain):
         train_sampler = WeightedRandomSampler(weights, len(train_ds),replacement=False)
         criterion = nn.NLLLoss() 
 
+    if distrib.is_dist_avail_and_initialized():
+        train_sampler = DistributedProxySampler(
+            train_sampler,
+            num_replicas=distrib.get_world_size(),
+            rank=distrib.get_rank()
+        )
+
     # Initialize the multi-threaded loaders.
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
+    train_loader = DataLoader(train_ds, sampler=train_sampler, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
-    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
+    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
 
     # Set up the model
     model = model.to(args.device)
+
+    model_without_ddp = model
+
+    if distrib.is_dist_avail_and_initialized():
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+
+    if (distrib.is_main_process()  and not args.no_wandb):
+        wandb.watch(model_without_ddp)
 
     # Set up the config
     config = IterativeTrainerConfig()
@@ -106,6 +125,8 @@ def train_classifier(args, model, domain):
             trainer.run_epoch(epoch, phase='train')
             trainer.run_epoch(epoch, phase='test')
 
+            torch.cuda.synchronize()
+
             train_loss = config.logger.get_measure('train_loss').mean_epoch()
             config.scheduler.step(train_loss)
 
@@ -113,6 +134,13 @@ def train_classifier(args, model, domain):
 
             # Save the logger for future reference.
             torch.save(config.logger.measures, os.path.join(home_path, 'logger.pth'))
+
+            log_stats = {'loss': train_loss,
+                        'test_accuracy': test_average_acc,
+                        'epoch': epoch}
+                     
+            if (distrib.is_main_process()  and not args.no_wandb):
+                wandb.log(log_stats)
 
             # Saving a checkpoint. Enable if needed!
             # if args.save and epoch % 10 == 0:
