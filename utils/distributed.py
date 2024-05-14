@@ -61,21 +61,23 @@ def init_distributed_mode(args):
 
     if args.distributed:
         if 'RANK' in os.environ and 'LOCAL_RANK' in os.environ:
+            print("running LOCAL_RANK mode")
             args.rank = int(os.environ["RANK"])
             args.gpu = int(os.environ['LOCAL_RANK'])
             # calculate the gpulist for this process (for example, if we have 4 GPUs and 2 processes, the first process will get GPUs 0 and 1, the second 2 and 3)
             args.gpulist = list("cuda:" + str(p) for p in range(args.gpu * ngpus_per_node, (args.gpu + 1) * ngpus_per_node))
 
-            print("Rank " + str(args.rank) + " GPU " + str(args.gpulist))
+            print("Rank " + str(args.rank) + " GPUs:" + str(args.gpulist))
         elif 'SLURM_PROCID' in os.environ:
+            print("running SLURM_PROCID mode")
             args.rank = int(os.environ['SLURM_PROCID'])
             local_processes = int(os.environ['SLURM_NTASKS_PER_NODE'])
             args.gpu = args.rank % torch.cuda.device_count()
 
-            gpus_per_process = ngpus_per_node // args.world_size
+            gpus_per_process = ngpus_per_node // local_processes
             args.gpulist = list("cuda:" + str(p) for p in range(args.gpu * gpus_per_process, (args.gpu + 1) * gpus_per_process))
 
-            print("Rank " + str(args.rank) + " GPU " + str(args.gpulist))
+            print("Rank " + str(args.rank) + " GPUs:" + str(args.gpulist))
     else:    
         print('Not using distributed mode, using all available GPUs.')
         args.gpulist = list("cuda:" + str(p) for p in range(ngpus_per_node))
