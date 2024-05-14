@@ -73,7 +73,7 @@ def get_classifier_config(args, model, domain):
     else:
         if len(args.gpulist) == 1:
             # we are not in distributed mode and we have one GPU, which means we're probably running the single-GPU versions of the classifiers.
-            model = model.to(args.device)
+            model = model.to(args.gpulist[0])
 
     if (distrib.is_main_process()  and not args.no_wandb):
         wandb.watch(model_without_ddp)
