@@ -63,7 +63,13 @@ def get_classifier_config(args, model, domain):
     model_without_ddp = model
 
     if distrib.is_dist_avail_and_initialized():
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        # if we're in distibuted mode, there are a number of possible configurations.
+        if len(args.gpulist) > 1:
+            # we have more than one GPU per node, which means we're probably running the multi-GPU versions of the classifiers.
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=args.gpulist, output_device=model_without_ddp.get_output_device())
+        else:
+            # we have one GPU per node, which means we're probably running the single-GPU versions of the classifiers.
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=args.gpulist, output_device=args.gpulist[0])
 
     if (distrib.is_main_process()  and not args.no_wandb):
         wandb.watch(model_without_ddp)

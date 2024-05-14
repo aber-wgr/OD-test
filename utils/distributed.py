@@ -47,7 +47,7 @@ def save_on_master(*args, **kwargs):
 
 
 def init_distributed_mode(args):
-    #os.environ["OMP_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = "1"
     #os.environ["NCCL_DEBUG"] = "INFO"
 
     if 'WORLD_SIZE' in os.environ:
@@ -56,17 +56,29 @@ def init_distributed_mode(args):
     ngpus_per_node = torch.cuda.device_count()
     print("GPUs per Node:" + str(ngpus_per_node))
 
+    # GPU count is a bit complicated here. We have ngpus_per_node GPUs per node, and a number of local tasks that need to share them.
+    # We need to figure out what our local rank is, and from there determine which GPUs we can use.
+
     if args.distributed:
         if 'RANK' in os.environ and 'LOCAL_RANK' in os.environ:
             args.rank = int(os.environ["RANK"])
             args.gpu = int(os.environ['LOCAL_RANK'])
-            print("Rank " + str(args.rank) + " GPU " + str(args.gpu))
+            # calculate the gpulist for this process (for example, if we have 4 GPUs and 2 processes, the first process will get GPUs 0 and 1, the second 2 and 3)
+            args.gpulist = list("cuda:" + str(p) for p in range(args.gpu * ngpus_per_node, (args.gpu + 1) * ngpus_per_node))
+
+            print("Rank " + str(args.rank) + " GPU " + str(args.gpulist))
         elif 'SLURM_PROCID' in os.environ:
             args.rank = int(os.environ['SLURM_PROCID'])
+            local_processes = int(os.environ['SLURM_NTASKS_PER_NODE'])
             args.gpu = args.rank % torch.cuda.device_count()
-            print("Rank " + str(args.rank) + " GPU " + str(args.gpu))
+
+            gpus_per_process = ngpus_per_node // args.world_size
+            args.gpulist = list("cuda:" + str(p) for p in range(args.gpu * gpus_per_process, (args.gpu + 1) * gpus_per_process))
+
+            print("Rank " + str(args.rank) + " GPU " + str(args.gpulist))
     else:    
-        print('Not using distributed mode')
+        print('Not using distributed mode, using all available GPUs.')
+        args.gpulist = list("cuda:" + str(p) for p in range(ngpus_per_node))
         return
 
     torch.cuda.set_device(args.gpu)

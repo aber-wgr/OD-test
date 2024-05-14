@@ -49,6 +49,14 @@ if __name__ == "__main__":
     num_tasks = distrib.get_world_size()
     global_rank = distrib.get_rank()
     
+    # build all the datasets, models and methods, now we know how many GPUs we have etc.
+    datasetStore = Global.DatasetStore()
+    datasetStore.generate(args)
+    modelStore = Global.ModelStore()
+    modelStore.generate(args)
+    methodStore = Global.MethodStore()
+    methodStore.generate(args)
+
     if (distrib.is_main_process()  and not args.no_wandb):
         wandb.config.update(args)
 
@@ -57,15 +65,15 @@ if __name__ == "__main__":
         # The procedures that can be skip-test are the ones that we can determine
         # whether we have done them before without instantiating the network architecture or dataset.
         # saves quite a lot of time when possible.
-        (Global.dataset_reference_classifiers, CLSetup.train_classifier,            True, ['base']),
-        #(Global.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
-        #(Global.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
-        #(Global.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
-        #(Global.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
-        #(Global.dataset_reference_waes, AESetup.train_BCE_WAE,                      False, []),
-        #(Global.dataset_reference_waes, AESetup.train_MSE_WAE,                      False, []),
-        #(Global.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
-        #(Global.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
+        (modelStore.dataset_reference_classifiers, CLSetup.train_classifier,            True, ['base']),
+        #(modelStore.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
+        #(modelStore.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
+        #(modelStore.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
+        #(modelStore.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
+        #(modelStore.dataset_reference_waes, AESetup.train_BCE_WAE,                      False, []),
+        #(modelStore.dataset_reference_waes, AESetup.train_MSE_WAE,                      False, []),
+        #(modelStore.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
+        #(modelStore.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
     ]
 
     # Do a for loop to run the training tasks.
@@ -74,10 +82,10 @@ if __name__ == "__main__":
         print('Processing %d datasets.'%len(target_datasets))
         for dataset in target_datasets:
             print('Processing dataset %s with %d networks for %d-%s.'%(dataset, len(ref_list[dataset]), task_id, train_func.__name__))
-            if skippable and not needs_processing(args, Global.all_datasets[dataset], ref_list[dataset], suffix=suffix):
+            if skippable and not needs_processing(args, datasetStore.all_datasets[dataset], ref_list[dataset], suffix=suffix):
                 print('Skipped')
                 continue
-            ds = Global.all_datasets[dataset](drop_class = args.drop_class)
+            ds = datasetStore.all_datasets[dataset](drop_class = args.drop_class)
             for model_builder in ref_list[dataset]:
                 model_builder.add('split_size',(int)(args.batch_size / 4))
                 model = model_builder()
