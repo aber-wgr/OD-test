@@ -139,8 +139,6 @@ class Scaled_VGG_2GPU(Scaled_VGG):
         self.dev1 = torch.device(devices[0])
         self.dev2 = torch.device(devices[1])
 
-        print ("VGG on devices: " + str(self.dev1) + " and " + str(self.dev2))
-
         # features on GPU0, classifier on GPU1
         self.model.features.to(self.dev1)
         self.model.avgpool.to(self.dev1)
@@ -149,14 +147,10 @@ class Scaled_VGG_2GPU(Scaled_VGG):
             self.model.avgpool
             ).to(self.dev1)
         
-        print("init seq1 first layer device: " + str(self.seq1[0][0].weight.get_device()))
-        
         self.model.classifier.to(self.dev2)
         self.seq2 = nn.Sequential(
             self.model.classifier
             ).to(self.dev2)
-
-        print("init seq2 first layer device: " + str(self.seq2[0][0].weight.get_device()))
 
         self._initialize_weights
 
@@ -166,9 +160,6 @@ class Scaled_VGG_2GPU(Scaled_VGG):
         x = self.seq1(x)
         x = torch.flatten(x, 1)
         x = x.to(self.dev2)
-
-        print("x device: " + str(x.get_device()))
-        print("seq2 first layer device: " + str(self.seq2[0][0].weight.get_device()))
 
         output = self.seq2(x)
 
