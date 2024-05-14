@@ -11,6 +11,7 @@ from os import path
 from methods import AbstractMethodInterface, AbstractModelWrapper, SVMLoss
 from datasets import MirroredDataset
 import global_vars as Global
+import utils.distributed as distrib 
 
 class PTModelWrapper(AbstractModelWrapper):
     """ The wrapper class for H.
@@ -234,14 +235,14 @@ class ProbabilityThreshold(AbstractMethodInterface):
                 test_average_acc = h_config.logger.get_measure('test_accuracy').mean_epoch()
 
                 # Save the logger for future reference.
-                torch.save(h_config.logger.measures, path.join(h_parent, 'logger.%s->%s.pth'%(self.args.D1, self.args.D2)))
+                distrib.save_on_master(h_config.logger.measures, path.join(h_parent, 'logger.%s->%s.pth'%(self.args.D1, self.args.D2)))
 
                 if best_accuracy < test_average_acc:
                     print('Updating the on file model with %s'%('%.4f'%test_average_acc))
                     best_accuracy = test_average_acc
-                    torch.save(h_config.model.H.state_dict(), h_path)
+                    distrib.save_on_master(h_config.model.H.state_dict(), h_path)
             
-            torch.save({'finished':True}, done_path)
+            distrib.save_on_master({'finished':True}, done_path)
 
         # Load the best model.
         print('Loading H model from %s'%h_path)

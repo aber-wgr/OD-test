@@ -10,6 +10,7 @@ from os import path
 
 from methods.base_threshold import ProbabilityThreshold
 from datasets import MirroredDataset
+import utils.distributed as distrib 
 
 class BinaryModelWrapper(nn.Module):
     """ The wrapper class for H.
@@ -146,17 +147,17 @@ class BinaryClassifier(ProbabilityThreshold):
                 test_average_acc = h_config.logger.get_measure('test_accuracy').mean_epoch()
 
                 # Save the logger for future reference.
-                torch.save(h_config.logger.measures, path.join(h_parent, 'logger.%s->%s.pth'%(self.args.D1, self.args.D2)))
+                distrib.save_on_master(h_config.logger.measures, path.join(h_parent, 'logger.%s->%s.pth'%(self.args.D1, self.args.D2)))
 
                 if best_accuracy < test_average_acc:
                     print('Updating the on file model with %s'%('%.4f'%test_average_acc))
                     best_accuracy = test_average_acc
-                    torch.save(h_config.model.state_dict(), h_path)
+                    distrib.save_on_master(h_config.model.state_dict(), h_path)
 
                 if test_average_acc > 1-1e-4:
                     break
 
-            torch.save({'finished':True}, done_path)
+            distrib.save_on_master({'finished':True}, done_path)
 
         # Load the best model.
         print('Loading H model from %s'%h_path)

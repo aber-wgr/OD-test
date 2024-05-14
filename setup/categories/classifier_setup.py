@@ -117,7 +117,7 @@ def train_classifier(args, model, domain):
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
     if not os.path.isdir(home_path):
-        os.makedirs(home_path)
+        os.makedirs(home_path,exist_ok=True)
 
     trainer = IterativeTrainer(config, args)
 
@@ -137,6 +137,8 @@ def train_classifier(args, model, domain):
             trainer.run_epoch(epoch, phase='test')
 
             torch.cuda.synchronize()
+            if distrib.is_dist_avail_and_initialized():
+                torch.distributed.barrier()
 
             train_loss = config.logger.get_measure('train_loss').mean_epoch()
             config.scheduler.step(train_loss)
@@ -144,7 +146,7 @@ def train_classifier(args, model, domain):
             test_average_acc = config.logger.get_measure('test_accuracy').mean_epoch()
 
             # Save the logger for future reference.
-            torch.save(config.logger.measures, os.path.join(home_path, 'logger.pth'))
+            distrib.save_on_master(config.logger.measures, os.path.join(home_path, 'logger.pth'))
 
             log_stats = {'loss': train_loss,
                         'test_accuracy': test_average_acc,
@@ -161,9 +163,9 @@ def train_classifier(args, model, domain):
             if args.save and best_accuracy < test_average_acc:
                 print('Updating the on file model with %s'%('%.4f'%test_average_acc))
                 best_accuracy = test_average_acc
-                torch.save(config.model.state_dict(), hbest_path)
+                distrib.save_on_master(config.model.state_dict(), hbest_path)
         
-        torch.save({'finished':True}, hbest_path + ".done")
+        distrib.save_on_master({'finished':True}, hbest_path + ".done")
     else:
         print("Skipping %s"%(home_path))
 
