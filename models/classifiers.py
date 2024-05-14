@@ -149,10 +149,14 @@ class Scaled_VGG_2GPU(Scaled_VGG):
             self.model.avgpool
             ).to(self.dev1)
         
+        print("init seq1 first layer device: " + str(self.seq1[0][0].weight.get_device()))
+        
         self.model.classifier.to(self.dev2)
         self.seq2 = nn.Sequential(
             self.model.classifier
             ).to(self.dev2)
+
+        print("init seq2 first layer device: " + str(self.seq2[0][0].weight.get_device()))
 
         self._initialize_weights
 
