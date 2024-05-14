@@ -47,31 +47,38 @@ def save_on_master(*args, **kwargs):
 
 
 def init_distributed_mode(args):
-    os.environ["OMP_NUM_THREADS"] = "1"
-    os.environ["NCCL_DEBUG"] = "INFO"
+    #os.environ["OMP_NUM_THREADS"] = "1"
+    #os.environ["NCCL_DEBUG"] = "INFO"
+
     if 'WORLD_SIZE' in os.environ:
         args.world_size = int(os.environ['WORLD_SIZE'])
     args.distributed = args.world_size > 1
     ngpus_per_node = torch.cuda.device_count()
+    print("GPUs per Node:" + str(ngpus_per_node))
 
-    if 'RANK' in os.environ and 'LOCAL_RANK' in os.environ:
-        args.rank = int(os.environ["RANK"])
-        args.gpu = int(os.environ['LOCAL_RANK'])
-    elif 'SLURM_PROCID' in os.environ:
-        args.rank = int(os.environ['SLURM_PROCID'])
-        args.gpu = args.rank % torch.cuda.device_count()
-    else:
+    if args.distributed:
+        if 'RANK' in os.environ and 'LOCAL_RANK' in os.environ:
+            args.rank = int(os.environ["RANK"])
+            args.gpu = int(os.environ['LOCAL_RANK'])
+            print("Rank " + str(args.rank) + " GPU " + str(args.gpu))
+        elif 'SLURM_PROCID' in os.environ:
+            args.rank = int(os.environ['SLURM_PROCID'])
+            args.gpu = args.rank % torch.cuda.device_count()
+            print("Rank " + str(args.rank) + " GPU " + str(args.gpu))
+    else:    
         print('Not using distributed mode')
-        args.distributed = False
         return
 
-    args.distributed = True
-
     torch.cuda.set_device(args.gpu)
-    args.dist_backend = 'nccl'
-    print('| distributed init (rank {}): {}'.format(
-        args.rank, args.dist_url), flush=True)
+    #args.dist_backend = 'nccl'
+    args.dist_backend = 'gloo'
+
+    print('| distributed init (rank {}/{}): {}'.format(
+        args.rank, args.world_size, args.dist_url), flush=True)
     torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
                                          world_size=args.world_size, rank=args.rank)
-    torch.distributed.barrier()
+    print("Init done, now calling barrier")
+    torch.distributed.monitored_barrier()
+    print("Barrier done, moving to setup")
     setup_for_distributed(args.rank == 0)
+    print("Completed Distributed Setup")

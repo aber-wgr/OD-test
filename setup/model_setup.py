@@ -37,6 +37,7 @@ def needs_processing(args, dataset_class, models, suffix):
 if __name__ == "__main__":
 
     distrib.init_distributed_mode(args)
+    print("Distributed init completed")
 
     if (distrib.is_main_process() and not args.no_wandb):
         wandb.init(project=args.wandb_project, entity="aber-wgr")

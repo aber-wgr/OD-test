@@ -16,9 +16,9 @@
 # memory per process in MB
 #SBATCH --mem=8192
 # number of nodes needed
-#SBATCH --nodes=2
+#SBATCH --nodes=1
 #number of tasks per each node
-#SBATCH --ntasks-per-node=2
+#SBATCH --ntasks-per-node=1
 # specify our current project
 #SBATCH --account=scw1744
 
@@ -49,7 +49,7 @@ export NCCL_MIN_CHANNELS=32
 echo "Run Started at:- "
 date
 
-srun singularity exec --nv ~/Containers/Singularity_Pytorch_QTA.sif /bin/bash ./sing_setup.sh
+srun singularity exec --nv ~/Containers/Singularity_ODTest2.sif /bin/bash ./sing_setup.sh
 
 echo "Run Finished at:- "
 date

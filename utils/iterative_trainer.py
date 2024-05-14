@@ -3,6 +3,7 @@ import errno
 import timeit
 
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 import models as Models
 
@@ -103,7 +104,10 @@ class IterativeTrainer(object):
             if self.config.cast_float_label:
                 target = target.float().unsqueeze(1)
 
-            input, target = input.to(self.device), target.to(model.get_output_device())
+            if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+                input, target = input.to(self.device), target.to(self.device)
+            else:
+                input, target = input.to(self.device), target.to(model.get_output_device())
 
             # Do a forward propagation and get the loss.
             prediction = None

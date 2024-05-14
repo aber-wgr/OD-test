@@ -85,6 +85,7 @@ def get_classifier_config(args, model, domain):
     config.classification = domain.get_num_classes() > 1
     config.stochastic_gradient = True
     config.model = model
+    config.model_without_ddp = model_without_ddp
     config.logger = Logger()
 
     config.optim = optim.Adam(model.parameters(), lr=1e-3)
