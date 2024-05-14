@@ -162,7 +162,7 @@ class Scaled_VGG_2GPU(Scaled_VGG):
         x = x.to(self.dev2)
 
         print("x device: " + str(x.get_device()))
-        print("seq2 device: " + str(self.seq2[0].weight.get_device()))
+        print("seq2 first layer device: " + str(self.seq2[0][0].weight.get_device()))
 
         output = self.seq2(x)
 
