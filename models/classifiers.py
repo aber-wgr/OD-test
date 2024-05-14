@@ -139,6 +139,8 @@ class Scaled_VGG_2GPU(Scaled_VGG):
         self.dev1 = torch.device(devices[0])
         self.dev2 = torch.device(devices[1])
 
+        print ("VGG on devices: " + str(self.dev1) + " and " + str(self.dev2))
+
         # features on GPU0, classifier on GPU1
         self.model.features.to(self.dev1)
         self.model.avgpool.to(self.dev1)
@@ -146,7 +148,7 @@ class Scaled_VGG_2GPU(Scaled_VGG):
             self.model.features,
             self.model.avgpool
             ).to(self.dev1)
-
+        
         self.model.classifier.to(self.dev2)
         self.seq2 = nn.Sequential(
             self.model.classifier
