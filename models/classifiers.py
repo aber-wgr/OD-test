@@ -24,11 +24,11 @@ class Scaled_VGG(nn.Module):
                 in_channels = v
         return nn.Sequential(*layers)
 
-    def __init__(self,scale,classes,epochs,split_size=0,init_weights=True):
+    def __init__(self,scale,classes,epochs,split_size=0,init_weights=True, devices=None):
         super(Scaled_VGG, self).__init__()
 
-        self.dev1 = torch.device('cuda:0')
-        self.dev2 = torch.device('cuda:0')
+        self.dev1 = torch.device(devices[0])
+        self.dev2 = torch.device(devices[0])
 
         self.split_size = split_size
 
@@ -130,14 +130,14 @@ class Scaled_VGG(nn.Module):
 
 class Scaled_VGG_2GPU(Scaled_VGG):
 
-    def __init__(self,scale,classes,epochs,split_size):
-        super(Scaled_VGG_2GPU, self).__init__(scale,classes,epochs,init_weights=False,split_size=split_size)
+    def __init__(self,scale,classes,epochs,split_size, devices=None):
+        super(Scaled_VGG_2GPU, self).__init__(scale,classes,epochs,init_weights=False,split_size=split_size, devices=devices)
 
         #self.dev1 = torch.device('cuda:0')
         #self.dev2 = torch.device('cpu')
 
-        self.dev1 = torch.device('cuda:0')
-        self.dev2 = torch.device('cuda:1')
+        self.dev1 = torch.device(devices[0])
+        self.dev2 = torch.device(devices[1])
 
         # features on GPU0, classifier on GPU1
         self.model.features.to(self.dev1)
@@ -240,14 +240,14 @@ class Scaled_Resnet(nn.Module):
         We replace the average pooling block to accomodate
         the requirements of MNIST.
     """
-    def __init__(self,scale,classes,epochs,split_size=0):
+    def __init__(self,scale,classes,epochs,split_size=0, devices=None):
         super(Scaled_Resnet, self).__init__()
         # Based on the imagenet normalization params.
         self.offset = 0.44900
         self.multiplier = 4.42477
 
-        self.dev1 = torch.device('cuda:0')
-        self.dev2 = torch.device('cuda:0')
+        self.dev1 = torch.device(devices[0])
+        self.dev2 = torch.device(devices[0])
 
         self.split_size = split_size
 
@@ -301,11 +301,11 @@ class Scaled_Resnet(nn.Module):
 
 class Scaled_Resnet_2GPU(Scaled_Resnet):
 
-    def __init__(self,scale,classes,epochs,split_size):
-        super(Scaled_Resnet_2GPU,self).__init__(scale,classes,epochs,split_size)
+    def __init__(self,scale,classes,epochs,split_size, devices=None):
+        super(Scaled_Resnet_2GPU,self).__init__(scale,classes,epochs,split_size, devices=devices)
         
-        self.dev1 = torch.device('cuda:0')
-        self.dev2 = torch.device('cuda:1')
+        self.dev1 = torch.device(devices[0])
+        self.dev2 = torch.device(devices[1])
 
         self.seq1 = nn.Sequential(
             self.model.conv1,
@@ -380,14 +380,14 @@ class Scaled_ResNext(nn.Module):
         We replace the average pooling block to accomodate
         the requirements of MNIST.
     """
-    def __init__(self,scale,classes,epochs,split_size=0):
+    def __init__(self,scale,classes,epochs,split_size=0, devices=None):
         super(Scaled_ResNext, self).__init__()
         # Based on the imagenet normalization params.
         self.offset = 0.44900
         self.multiplier = 4.42477
 
-        self.dev1 = torch.device('cuda:0')
-        self.dev2 = torch.device('cuda:0')
+        self.dev1 = torch.device(devices[0])
+        self.dev2 = torch.device(devices[0])
 
         self.split_size = split_size
 
@@ -420,9 +420,6 @@ class Scaled_ResNext(nn.Module):
         output = output.to(self.dev2)
         return output
 
-    def get_output_device(self):
-        return torch.device('cuda:0')
-
     def output_size(self):
         return torch.LongTensor([1, self.classes])
 
@@ -440,14 +437,14 @@ class Scaled_Densenet(nn.Module):
     """
         Using Densenet121
     """
-    def __init__(self,scale,classes,epochs,split_size=0):
+    def __init__(self,scale,classes,epochs,split_size=0, devices=None):
         super(Scaled_Densenet, self).__init__()
         # Based on the imagenet normalization params.
         self.offset = 0.44900
         self.multiplier = 4.42477
 
-        self.dev1 = torch.device('cuda:0')
-        self.dev2 = torch.device('cuda:0')
+        self.dev1 = torch.device(devices[0])
+        self.dev2 = torch.device(devices[0])
 
         self.split_size = split_size
 
@@ -488,9 +485,6 @@ class Scaled_Densenet(nn.Module):
 
         output = output.to(self.dev2)
         return output
-
-    def get_output_device(self):
-        return torch.device('cuda:0')
 
     def output_size(self):
         return torch.LongTensor([1, self.classes])

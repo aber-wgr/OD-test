@@ -85,6 +85,7 @@ if __name__ == "__main__":
             ds = Global.datasetStore.all_datasets[dataset](drop_class = args.drop_class)
             for model_builder in ref_list[dataset]:
                 model_builder.add('split_size',(int)(args.batch_size / 4))
+                model_builder.add('devices', args.gpulist)
                 model = model_builder()
                 print('Training %s'%(model.__class__.__name__))
                 train_func(args, model, ds)

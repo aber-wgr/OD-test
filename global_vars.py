@@ -100,8 +100,10 @@ class ModelStore(object):
         devices_available = len(args.gpulist)
 
         if(devices_available > 1):
-            VGG_modeltype = CLS.Scaled_VGG_2GPU_Pipeline
-            ResNet_modeltype = CLS.Scaled_Resnet_2GPU_Pipeline
+            #VGG_modeltype = CLS.Scaled_VGG_2GPU_Pipeline
+            #ResNet_modeltype = CLS.Scaled_Resnet_2GPU_Pipeline
+            VGG_modeltype = CLS.Scaled_VGG_2GPU
+            ResNet_modeltype = CLS.Scaled_Resnet_2GPU
         else:
             VGG_modeltype = CLS.Scaled_VGG
             ResNet_modeltype = CLS.Scaled_Resnet
