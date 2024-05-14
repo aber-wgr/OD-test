@@ -160,6 +160,10 @@ class Scaled_VGG_2GPU(Scaled_VGG):
         x = self.seq1(x)
         x = torch.flatten(x, 1)
         x = x.to(self.dev2)
+
+        print("x device: " + str(x.get_device()))
+        print("seq2 device: " + str(self.seq2[0].weight.get_device()))
+
         output = self.seq2(x)
 
         if softmax:
