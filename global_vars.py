@@ -20,8 +20,7 @@ import copy
 import utils.distributed as distrib 
 
 class DatasetStore(object):
-    def __init__(self, parent_class, **kwargs):
-        self.parent_class = parent_class
+    def __init__(self, **kwargs):
         self.kwargs = kwargs
 
         self.all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
@@ -93,8 +92,7 @@ class ModelFactory(object):
         return self.parent_class(**self.kwargs)
     
 class ModelStore(object):
-    def __init__(self, parent_class, **kwargs):
-        self.parent_class = parent_class
+    def __init__(self, **kwargs):
         self.kwargs = kwargs
 
     def generate(self,args):
