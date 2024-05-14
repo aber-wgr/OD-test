@@ -58,7 +58,7 @@ def get_classifier_config(args, model, domain):
     all_loader   = DataLoader(dataset,  batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
 
     # Set up the model
-    model = model.to(args.device)
+    #model = model.to(args.device)
 
     model_without_ddp = model
 
@@ -70,6 +70,13 @@ def get_classifier_config(args, model, domain):
         else:
             # we have one GPU per node, which means we're probably running the single-GPU versions of the classifiers.
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=args.gpulist, output_device=args.gpulist[0])
+    else:
+        if len(args.gpulist) > 1:
+            # we are not in distributed mode and we have more than one GPU, which means we're probably running the multi-GPU versions of the classifiers.
+            # these set their own devices
+        else
+            # we are not in distributed mode and we have one GPU, which means we're probably running the single-GPU versions of the classifiers.
+            model = model.to(args.device)
 
     if (distrib.is_main_process()  and not args.no_wandb):
         wandb.watch(model_without_ddp)
