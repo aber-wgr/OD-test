@@ -72,7 +72,7 @@ class SDThreshold(AbstractMethodInterface):
 
         # Set up the model
         import global_vars as Global
-        model = Global.get_ref_classifier(dataset.name)[self.default_model]().to(self.args.device)
+        model = Global.modelStore.get_ref_classifier(dataset.name)[self.default_model]().to(self.args.device)
         self.add_identifier = model.__class__.__name__
         if hasattr(model, 'preferred_name'):
             self.add_identifier = model.preferred_name()
@@ -123,7 +123,7 @@ class SDThreshold(AbstractMethodInterface):
         # 80%, 20% for local train+test
         train_ds, valid_ds = dataset.split_dataset(0.8)
 
-        if self.args.D1 in Global.mirror_augment:
+        if self.args.D1 in Global.datasetStore.mirror_augment:
             print("Mirror augmenting %s"%self.args.D1)
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds

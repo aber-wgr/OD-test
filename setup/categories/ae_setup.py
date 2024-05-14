@@ -19,7 +19,7 @@ def get_ae_config(args, model, dataset, BCE_Loss):
     # 80%, 20% for local train+test
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
-    if dataset.name in Global.mirror_augment:
+    if dataset.name in Global.datasetStore.mirror_augment:
         print("Mirror augmenting %s"%dataset.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds
@@ -79,7 +79,7 @@ def get_vae_config(args, model, dataset):
     # 80%, 20% for local train+test
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
-    if dataset.name in Global.mirror_augment:
+    if dataset.name in Global.datasetStore.mirror_augment:
         print("Mirror augmenting %s"%dataset.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds

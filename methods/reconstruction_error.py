@@ -75,7 +75,7 @@ class ReconstructionThreshold(ProbabilityThreshold):
         all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
 
         # Set up the model
-        model = Global.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
+        model = Global.modelStore.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
 
         # Set up the criterion
         criterion = None
@@ -139,7 +139,7 @@ class ReconstructionThreshold(ProbabilityThreshold):
         # 80%, 20% for local train+test
         train_ds, valid_ds = dataset.split_dataset(0.8)
 
-        if self.args.D1 in Global.mirror_augment:
+        if self.args.D1 in Global.datasetStore.mirror_augment:
             print("Mirror augmenting %s"%self.args.D1)
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds

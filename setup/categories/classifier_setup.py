@@ -26,7 +26,7 @@ def get_classifier_config(args, model, domain):
     # 80%, 20% for local train+test
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
-    if dataset.name in Global.mirror_augment:
+    if dataset.name in Global.datasetStore.mirror_augment:
         print("Mirror augmenting %s"%domain.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds

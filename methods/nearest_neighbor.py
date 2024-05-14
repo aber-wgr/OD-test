@@ -62,7 +62,7 @@ class KNNSVM(ScoreSVM):
             self.base_model.base_data = None
             self.base_model = None
 
-        if dataset.name in Global.mirror_augment:
+        if dataset.name in Global.datasetStore.mirror_augment:
             print("Mirror augmenting %s"%dataset.name)
             new_train_ds = dataset + MirroredDataset(dataset)
             dataset = new_train_ds
@@ -135,14 +135,14 @@ class AEKNNSVM(ScoreSVM):
 
         # Set up the base-model
         if isinstance(self, BCEKNNSVM) or isinstance(self, MSEKNNSVM):
-            base_model = Global.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
+            base_model = Global.modelStore.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
             if isinstance(self, BCEKNNSVM):
                 base_model.netid = "BCE." + base_model.netid
             else:
                 base_model.netid = "MSE." + base_model.netid
             home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
         elif isinstance(self, VAEKNNSVM):
-            base_model = Global.get_ref_vae(dataset.name)[0]().to(self.args.device)
+            base_model = Global.modelStore.get_ref_vae(dataset.name)[0]().to(self.args.device)
             home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
         else:
             raise NotImplementedError()
@@ -153,7 +153,7 @@ class AEKNNSVM(ScoreSVM):
         base_model.load_state_dict(torch.load(best_h_path))
         base_model.eval()
 
-        if dataset.name in Global.mirror_augment:
+        if dataset.name in Global.datasetStore.mirror_augment:
             print("Mirror augmenting %s"%dataset.name)
             new_train_ds = dataset + MirroredDataset(dataset)
             dataset = new_train_ds

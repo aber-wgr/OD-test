@@ -69,7 +69,7 @@ class MCDropout(ProbabilityThreshold):
         # 80%, 20% for local train+test
         train_ds, valid_ds = dataset.split_dataset(0.8)
 
-        if self.args.D1 in Global.mirror_augment:
+        if self.args.D1 in Global.datasetStore.mirror_augment:
             print("Mirror augmenting %s"%self.args.D1)
             new_train_ds = train_ds + MirroredDataset(train_ds)
             train_ds = new_train_ds

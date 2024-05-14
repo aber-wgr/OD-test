@@ -208,3 +208,6 @@ class MethodStore(object):
     def generate(self,args):
         pass
     
+datasetStore = DatasetStore()
+modelStore = ModelStore()
+methodStore = MethodStore()

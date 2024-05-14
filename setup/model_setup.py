@@ -50,12 +50,9 @@ if __name__ == "__main__":
     global_rank = distrib.get_rank()
     
     # build all the datasets, models and methods, now we know how many GPUs we have etc.
-    datasetStore = Global.DatasetStore()
-    datasetStore.generate(args)
-    modelStore = Global.ModelStore()
-    modelStore.generate(args)
-    methodStore = Global.MethodStore()
-    methodStore.generate(args)
+    Global.datasetStore.generate(args)
+    Global.modelStore.generate(args)
+    Global.methodStore.generate(args)
 
     if (distrib.is_main_process()  and not args.no_wandb):
         wandb.config.update(args)

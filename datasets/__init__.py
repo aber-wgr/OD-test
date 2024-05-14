@@ -185,8 +185,8 @@ class AbstractDomainInterface(object):
     def is_compatible(self, D1):
         import global_vars as Global
         
-        if self.name in Global.d2_compatiblity:
-            return D1.name in Global.d2_compatiblity[self.name]
+        if self.name in Global.datasetStore.d2_compatiblity:
+            return D1.name in Global.datasetStore.d2_compatiblity[self.name]
         else:
             raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
 
