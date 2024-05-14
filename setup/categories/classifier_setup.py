@@ -66,10 +66,10 @@ def get_classifier_config(args, model, domain):
         # if we're in distibuted mode, there are a number of possible configurations.
         if len(args.gpulist) > 1:
             # we have more than one GPU per node, which means we're probably running the multi-GPU versions of the classifiers.
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpulist[0]], output_device=None)
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=None, output_device=None)
         else:
             # we have one GPU per node, which means we're probably running the single-GPU versions of the classifiers.
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpulist[0]], output_device=None)
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpulist[0]])
     else:
         if len(args.gpulist) == 1:
             # we are not in distributed mode and we have one GPU, which means we're probably running the single-GPU versions of the classifiers.
