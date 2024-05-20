@@ -8,7 +8,7 @@ from PIL import Image
 import torchvision.transforms as transforms
 from datasets import SubDataset, AbstractDomainInterface
 
-class GeneratedDataset(data.Dataset):
+class GeneratedDatasetParent(data.Dataset):
     """`Dataset used for generated data
     This was originally built for the domain shift experiment, but can be used for any generated data.
     Args:
@@ -40,11 +40,23 @@ class GeneratedDataset(data.Dataset):
         """
         if self.train:
             img, target = self.train_data[index], self.train_labels[index]
-
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        #img = Image.fromarray(img.numpy(), mode='L')
-
+            # doing this so that it is consistent with all other datasets
+            # to return a PIL Image
+            # otherwise you get an error from conformity_transform
+            img = img.numpy()
+        
+        #if len(img.shape) > 2:
+        #    # we have channel data
+        #    s = img.shape[0]
+        #    if s == 1:
+        #        print("grayscale")
+        #        img = Image.fromarray(img[0].numpy(), mode='L')
+        #    else:
+        #        img = Image.fromarray(img.numpy(), mode='F')
+                
+        #else:        
+        #    img = Image.fromarray(img.numpy())
+            
         if self.transform is not None:
             img = self.transform(img)
 
@@ -64,25 +76,31 @@ class GeneratedDataset(data.Dataset):
         self.train_data.append(data)
         self.train_labels.append(label)
 
-class GeneratedDomain(AbstractDomainInterface):
+class GeneratedDataset(AbstractDomainInterface):
 
     def __init__(self, base_array=None, drop_class=None):
-        super(GeneratedDomain, self).__init__(drop_class = drop_class)
+        super(GeneratedDataset, self).__init__(drop_class = drop_class)
         
         im_transformer  = transforms.Compose([transforms.ToTensor()])
-        self.ds_train   = GeneratedDataset(transform=im_transformer)
+        self.ds_train   = GeneratedDatasetParent(transform=im_transformer)
         if base_array is not None:
             for i in range(len(base_array)):
                 self.ds_train.append(base_array[i], i)
     
+    def append(self, data, label):
+        self.ds_train.append(data,label)
+    
     def get_D2_train(self, D1):
-        return self.ds_train
+        target_indices = torch.arange(0, len(self.ds_train))
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices)
 
     def get_D2_valid(self, D1):
-        return self.ds_train
+        target_indices = torch.arange(0, len(self.ds_train))
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices)
 
     def get_D2_test(self, D1):
-        return self.ds_train
+        target_indices = torch.arange(0, len(self.ds_train))
+        return SubDataset(self.name, self.base_name, self.ds_train, target_indices)
 
     def get_num_classes(self):
         return len(torch.unique(self.ds_train))

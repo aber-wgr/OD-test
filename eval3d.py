@@ -5,7 +5,7 @@ from utils.args import args
 import global_vars as Global
 import copy
 from setup.categories.ae_setup import get_vae_config
-from datasets import SubDataset
+from datasets import SubDataset,GeneratedDataset
 from utils.iterative_trainer import IterativeTrainer
 import models as Models
 import models.autoencoders as AES
@@ -394,6 +394,8 @@ if __name__ == "__main__":
                             
 
                             # Now we have a trained VAE, we can generate test points from d2 and d3, and interpolate between them
+                            
+                            #pdb.set_trace()
 
                             # Get the test sets
                             d2_test_base = ds2.get_D2_test(ds1)
@@ -442,7 +444,7 @@ if __name__ == "__main__":
                                 latent = autoencoder_config.model.encode(x)
 
                                 # add it to the list
-                                d2_test_latent.append(latent)
+                                d2_test_latent.append((latent,label))
                                 
                             print("D2 samples run")
                             print(torch.cuda.memory_summary(0))
@@ -465,22 +467,24 @@ if __name__ == "__main__":
                                 latent = autoencoder_config.model.encode(x)
 
                                 # add it to the list
-                                d3_test_latent.append(latent)
+                                d3_test_latent.append((latent,label))
                                 
                                 
                             print("D3 samples run")
                             print(torch.cuda.memory_summary(0))
                             
-                            d2_test = []
+                            d2_test = GeneratedDataset.GeneratedDataset()
+                            
+                            pdb.set_trace()
 
                             # Now we get the interpolated points
                             # Because we're looking at domain shift, we will run from 0 to 1 over the length of the test set
 
                             for i in range(final_len):
                                 # get the latent space representations of the two points
-                                latent1 = d2_test_latent[i]
-                                pdb.set_trace()
-                                latent2 = d3_test_latent[i]
+                                latent1 = d2_test_latent[i][0]
+                                #pdb.set_trace()
+                                latent2 = d3_test_latent[i][0]
 
                                 # interpolate between them
                                 interpolated = latent1 + (latent2 - latent1) * i / final_len
@@ -488,11 +492,14 @@ if __name__ == "__main__":
                                 # decode the interpolated point
                                 decoded = autoencoder_config.model.decode(interpolated)
 
-                                # add the decoded point to the test set
-                                d2_test.append(decoded,0)
+                                # sequentially add the decoded points to the test set
+                                for i in range(len(decoded[0])):
+                                    d2_test.append(decoded[i].cpu(),d2_test_latent[1])
                                 
                             print("Redecoded points run")
                             print(torch.cuda.memory_summary(0))
+                            
+                            d2_test = d2_test.get_D2_test(ds1)
                         else:
                             d2_test = ds3.get_D2_test(ds1)
                     
@@ -507,6 +514,7 @@ if __name__ == "__main__":
                     d1_test.trim_dataset(final_len)
                     d2_test.trim_dataset(final_len)
                     test_mixture = d1_test + d2_test
+                    pdb.set_trace()
                     print("Final test size: %d+%d=%d"%(len(d1_test), len(d2_test), len(test_mixture)))
 
                     test_acc = BT.test_H(test_mixture)

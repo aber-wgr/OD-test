@@ -261,22 +261,20 @@ class ProbabilityThreshold(AbstractMethodInterface):
         correct = 0.0
         total_count = 0
         self.H_class.eval()
-        with tqdm(total=len(dataset)) as pbar:
-            for i, (image, label) in enumerate(dataset):
-                pbar.update()
+        
+        for i, (image, label) in enumerate(dataset):
 
-                # Get and prepare data.
-                input, target = image.to(self.args.device), label.to(self.args.device)
+            # Get and prepare data.
+            input, target = image.to(self.args.device), label.to(self.args.device)
 
-                prediction = self.H_class(input)
-                classification = self.H_class.classify(prediction)
+            prediction = self.H_class(input)
+            classification = self.H_class.classify(prediction)
 
-                correct += (classification.detach().view(-1) == target.detach().view(-1).long()).float().view(-1).sum()
-                total_count += len(input)
+            correct += (classification.detach().view(-1) == target.detach().view(-1).long()).float().view(-1).sum()
+            total_count += len(input)
 
-                message = 'Accuracy %.4f'%(correct/total_count)
-                pbar.set_description(message)
-   
+            message = 'Accuracy %.4f'%(correct/total_count)
+       
         test_average_acc = correct/total_count
         print("Final Test average accuracy %s"%('%.4f%%'%(test_average_acc*100)))
         return test_average_acc.item()
