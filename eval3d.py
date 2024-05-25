@@ -371,7 +371,8 @@ if __name__ == "__main__":
                             torch.save({'finished':True}, autoencoder_hbest_path + ".done")
 
                             print("Loading the best model.")
-                            autoencoder_config.model.load_state_dict(torch.load(autoencoder_hbest_path))
+                            if(os.path.exists(autoencoder_hbest_path)):
+                                autoencoder_config.model.load_state_dict(torch.load(autoencoder_hbest_path))
                             autoencoder_config.model.eval()
 
                             # Now we have a trained VAE, we can generate test points from d2 and d3, and interpolate between them
