@@ -70,11 +70,11 @@ class OMIDB(AbstractDomainInterface):
         return self.train_class_weight
     
     def get_D1_train(self):
-        return SubDataset(self.name, self.base_dataset, self.D1_train_ind)
+        return SubDataset(self.name, self.base_name, self.base_dataset, self.D1_train_ind)
     def get_D1_valid(self):
-        return SubDataset(self.name, self.base_dataset, self.D1_valid_ind, label=0)
+        return SubDataset(self.name, self.base_name, self.base_dataset, self.D1_valid_ind, label=0)
     def get_D1_test(self):
-        return SubDataset(self.name, self.base_dataset, self.D1_test_ind, label=0)
+        return SubDataset(self.name, self.base_name, self.base_dataset, self.D1_test_ind, label=0)
 
     def get_D1_train_weighting(self):
         d1_set = self.get_D1_train()
@@ -85,11 +85,11 @@ class OMIDB(AbstractDomainInterface):
 
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.base_dataset, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.base_name, self.base_dataset, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
 
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.base_dataset, self.D2_test_ind, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.base_name, self.base_dataset, self.D2_test_ind, label=1, transform=D1.conformity_transform())
 
     def get_num_classes(self):
         return 1
