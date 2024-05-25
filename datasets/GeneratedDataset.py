@@ -43,6 +43,8 @@ class GeneratedDatasetParent(data.Dataset):
             # doing this so that it is consistent with all other datasets
             # to return a PIL Image
             # otherwise you get an error from conformity_transform
+            # Fix: ToTensor transform permutes the channels, so pre-permute them to HWC
+            img = img.permute((1,2,0)).contiguous()
             img = img.numpy()
         
         #if len(img.shape) > 2:
