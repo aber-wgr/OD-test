@@ -89,9 +89,14 @@ if __name__ == "__main__":
                 ds_cache[d] = Global.all_datasets[d](drop_class = args.drop_class)
     # If results exists already, just continue where left off.
     results_path = os.path.join(args.experiment_path, 'results.pth')
+
+    if args.interpolate_shift:
+        args.force_run = True
+
     if os.path.exists(results_path) and not args.force_run:
         print ("Loading previous checkpoint")
         results = torch.load(results_path)
+    
     for d1 in d1_tasks:
         args.D1 = d1
         for method in method_tasks:
