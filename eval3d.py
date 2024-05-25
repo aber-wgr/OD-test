@@ -75,11 +75,6 @@ for m in [d1_tasks, d2_tasks, d3_tasks]:
             ds_cache[d] = Global.all_datasets[d]()
 
 results = []
-# If results exists already, just continue where left off.
-results_path = os.path.join(args.experiment_path, 'results.pth')
-if os.path.exists(results_path) and not args.force_run:
-    print ("Loading previous checkpoint")
-    results = torch.load(results_path)
 
 def has_done_before(method, d1, d2, d3):
     for m, ds, dm, dt, mid, a1, a2 in results:
