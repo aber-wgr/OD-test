@@ -4,75 +4,45 @@ import torch
 from utils.args import args
 import global_vars as Global
 
+import json
+from json.decoder import JSONDecodeError
 #########################################################
-"""
-    Master Evaluation.
-"""
 d1_tasks, d2_tasks, d3_tasks, method_tasks = [], [], [], []
 
-if args.exp == 'master':
-    d1_tasks     = ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10']
-    #d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
-    #d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
-    d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10']
-    d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10']
-    method_tasks = [
-                    'pixelcnn/0',
-                    'mcdropout/0',
-                    'prob_threshold/0',     'prob_threshold/1',
-                    'score_svm/0',          'score_svm/1',
-                    'logistic_svm/0',       'logistic_svm/1',
-                    'openmax/0',            'openmax/1',
-                    'binclass/0',           'binclass/1',
-                    'deep_ensemble/0',      'deep_ensemble/1',
-                    'odin/0',               'odin/1',
-                    'reconst_thresh/0',     'reconst_thresh/1',
-                    'knn/1', 'knn/2', 'knn/4', 'knn/8',
-                    'bceaeknn/1', 'vaeaeknn/1', 'mseaeknn/1',
-                    'bceaeknn/2', 'vaeaeknn/2', 'mseaeknn/2',
-                    'bceaeknn/4', 'vaeaeknn/4', 'mseaeknn/4',
-                    'bceaeknn/8', 'vaeaeknn/8', 'mseaeknn/8',
-                    ]
-########################################################
-"""
-    Test evaluation
-"""
-if args.exp == 'test-eval':
+json_file = args.exp
+json_exists = os.path.isfile(json_file)
+
+
+if (not json_file.endswith('.json')) or (not json_exists):
+    print("Using default evaluation")
     d1_tasks     = ['MNIST']
-    d2_tasks     = ['UniformNoise', 'NormalNoise']
-    d3_tasks     = ['UniformNoise', 'NormalNoise']
+    d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
+    d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
     method_tasks     = [
+                        # 'empty/0',
+                        'confidence_check/0',
                         'prob_threshold/0',
                         ]
-########################################################
-"""
-    Default Evaluation
-"""
-if len(d1_tasks) == 0:
-    d1_tasks     = ['MNIST']
-    #d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
-    #d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet']
-    d2_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10']
-    d3_tasks     = ['UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST', 'CIFAR10', 'CIFAR100', 'STL10']
-    
-    method_tasks     = [
-                        'prob_threshold/0',
-                        ]
+else:
+    with open(json_file,"r") as fp:
+        try:
+            jx = json.load(fp)
+            args.exp = jx['name']
+            print("Loaded experiment:" + args.exp)
+            d1_tasks = jx['d1_tasks']
+            d2_tasks = jx['d2_tasks']
+            d3_tasks = jx['d3_tasks']
+            method_tasks = jx['method_tasks']
+        except KeyError:
+            print("Bad JSON file, check key headers")
+            quit()
+        except JSONDecodeError:
+            print("Bad JSON file, check structure")
+            quit()
 
 # Construct the dataset cache
 ds_cache = {}
-
-for m in [d1_tasks, d2_tasks, d3_tasks]:
-    for d in m:
-        if not d in ds_cache:
-            ds_cache[d] = Global.all_datasets[d]()
-
 results = []
-# If results exists already, just continue where left off.
-results_path = os.path.join(args.experiment_path, 'results.pth')
-if os.path.exists(results_path) and not args.force_run:
-    print ("Loading previous checkpoint")
-    results = torch.load(results_path)
 
 def has_done_before(method, d1, d2, d3):
     for m, ds, dm, dt, mid, a1, a2 in results:
@@ -85,11 +55,14 @@ if __name__ == "__main__":
         for d in m:
             if d not in ds_cache:
                 ds_cache[d] = Global.all_datasets[d](drop_class = args.drop_class)
+    
     # If results exists already, just continue where left off.
     results_path = os.path.join(args.experiment_path, 'results.pth')
+    
     if os.path.exists(results_path) and not args.force_run:
         print ("Loading previous checkpoint")
         results = torch.load(results_path)
+    
     for d1 in d1_tasks:
         args.D1 = d1
         for method in method_tasks:
@@ -108,8 +81,9 @@ if __name__ == "__main__":
 
                 print ("Performing %s on %s vs. %s-%s"%(method, d1,d2,d3))
 
-                if has_done_before(method, d1, d2, d3):
-                    print ("Skipped, has been done before.")
+                if torch.ByteTensor(
+                        [has_done_before(method, d1, d2, d3) or not ds_cache[d3].is_compatible(ds1) or d2 == d3 for d3 in d3_tasks]
+                    ).all():
                     continue
 
                 ds3 = ds_cache[args.D3]
