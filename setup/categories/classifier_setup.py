@@ -27,11 +27,11 @@ def get_classifier_config(args, model, domain):
     train_ds, valid_ds = dataset.split_dataset(0.8)
 
     if dataset.name in Global.datasetStore.mirror_augment:
-        print("Mirror augmenting %s"%domain.name)
+        print("Mirror augmenting %s"%dataset.name)
         new_train_ds = train_ds + MirroredDataset(train_ds)
         train_ds = new_train_ds
 
-    criterion = nn.MSELoss()
+    criterion = None
     train_sampler = None
 
     #recalculate weighting
@@ -53,9 +53,10 @@ def get_classifier_config(args, model, domain):
         )
 
     # Initialize the multi-threaded loaders.
-    train_loader = DataLoader(train_ds, sampler=train_sampler, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
-    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
-    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
+    pin = (args.device != 'cpu')
+    train_loader = DataLoader(train_ds, sampler=train_sampler, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin)
+    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=pin, drop_last=True)
+    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=pin, drop_last=True)
 
     # Set up the model
     #model = model.to(args.device)
@@ -81,7 +82,11 @@ def get_classifier_config(args, model, domain):
     # Set up the config
     config = IterativeTrainerConfig()
 
-    config.name = 'classifier_%s_%s'%(dataset.name, model.__class__.__name__)
+    #if the type of the model is not the same as model_without_ddp, we need to account for this in the name
+    if model.__class__ != model_without_ddp.__class__: 
+        config.name = 'classifier_%s_%s_%s'%(dataset.name, model.__class__.__name__, model_without_ddp.__class__.__name__)
+    else:
+        config.name = 'classifier_%s_%s'%(dataset.name, model.__class__.__name__)
 
     config.train_loader = train_loader
     config.valid_loader = valid_loader

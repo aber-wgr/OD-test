@@ -105,7 +105,7 @@ class IterativeTrainer(object):
                 target = target.float().unsqueeze(1)
 
             if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-                input, target = input.to(self.device), target.to(self.args.model_without_ddp.get_output_device())
+                input, target = input.to(self.device), target.to(self.config.model_without_ddp.get_output_device())
             else:
                 input, target = input.to(self.device), target.to(model.get_output_device())
 
