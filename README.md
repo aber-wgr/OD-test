@@ -7,12 +7,12 @@ This is a development of Shafei's original OD-test. The goal is to achieve the f
 - Experiments driven from JSON files rather than code (Done)
 - Add new models, methods etc from the huge number published since Shafei's paper (Densenet and ResNext added)
 - Novel Class problems: Holdout class training and testing (Done)
-- Domain Shift problems: Domain interpolation using autoencoder (In Progress)
-- False Certainty metrics (In Progress)
+- Domain Shift problems: Domain interpolation using autoencoder (Done)
+- False Certainty metrics (Done)
 - Add support for medical datasets such as OMI-DB and ISIC2018/9 (OMI-DB Done, ISIC2018/9 In Progress)
 - Add in more support for split models with streaming for Model Parallel (Done)
-- Add in Distributed Pytorch and support for SLURM (In Progress).
-
+- Singularity build script (Done)
+- Add in Distributed Pytorch and support for SLURM (Done).
 
 I'll update this readme as we go.
 
