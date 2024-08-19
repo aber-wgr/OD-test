@@ -3,6 +3,9 @@ import torchvision.transforms as transforms
 from datasets import SubDataset, AbstractDomainInterface, ExpandRGBChannels
 from torchvision import datasets
 
+import utils.distributed as distrib
+import torch.distributed as dist
+
 class STL10(AbstractDomainInterface):
     """
         STL10: 5,000 train + 8,000 test. (3x96x96)
@@ -27,14 +30,41 @@ class STL10(AbstractDomainInterface):
         self.D2_valid_ind = torch.arange(0,5000).int()
         self.D2_test_ind  = torch.arange(0,8000).int()
 
-        self.ds_train   = datasets.STL10(root_path,
-                                        split='train',
-                                        transform=im_transformer,
-                                        download=True)
-        self.ds_test    = datasets.STL10(root_path,
-                                        split='test',
-                                        transform=im_transformer,
-                                        download=True)
+        if(distrib.is_dist_avail_and_initialized()):
+            # if we're in distributed mode, we don't really want to trigger the download <world_size> times, so we load it in the main process then barrier to sync the check for everyone else
+            if(distrib.is_main_process()):
+                # we're the main process, so do the download if needed
+                self.ds_train   = datasets.STL10(root_path,
+                                            split='train',
+                                            transform=im_transformer,
+                                            download=True)
+                self.ds_test    = datasets.STL10(root_path,
+                                            split='test',
+                                            transform=im_transformer,
+                                            download=True)
+                # and now bring everyone else in to sync
+                dist.barrier()
+            else:
+                # we're not the main process, so sync to after the main process has finished downloading
+                dist.barrier()
+                self.ds_train   = datasets.STL10(root_path,
+                                            split='train',
+                                            transform=im_transformer,
+                                            download=False)
+                self.ds_test    = datasets.STL10(root_path,
+                                            split='test',
+                                            transform=im_transformer,
+                                            download=False)
+        else:
+            # syncing irrelevant, go ahead and download now
+            self.ds_train   = datasets.STL10(root_path,
+                                            split='train',
+                                            transform=im_transformer,
+                                            download=True)
+            self.ds_test    = datasets.STL10(root_path,
+                                            split='test',
+                                            transform=im_transformer,
+                                            download=True)
 
         if(drop_class!=None):
             new_D1_train_ind = []

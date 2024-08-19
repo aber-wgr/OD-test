@@ -10,6 +10,7 @@ import models as Models
 import matplotlib.pyplot as plt
 
 import os
+import utils.distributed as distrib
 
 """
 From https://en.wikipedia.org/wiki/Coefficient_of_determination
@@ -50,7 +51,7 @@ class IterativeTrainer(object):
         dataset     = config['dataset']
         backward    = config['backward']
         phase_name  = phase
-        print("Doing %s"%phase)
+        print("Iterative Trainer: Doing %s"%phase)
 
         model       = self.config.model
         criterion   = self.config.criterion
@@ -84,7 +85,9 @@ class IterativeTrainer(object):
         if backward and not stochastic:
             optimizer.zero_grad()
 
+
         for i, (image, label) in enumerate(dataset):
+
             if backward and stochastic:
                 optimizer.zero_grad()
 
@@ -105,7 +108,8 @@ class IterativeTrainer(object):
                 target = target.float().unsqueeze(1)
 
             if isinstance(model, torch.nn.parallel.DistributedDataParallel):
-                input, target = input.to(self.device), target.to(self.args.model_without_ddp.get_output_device())
+                output_dev = self.config.model_without_ddp.get_output_device()
+                input, target = input.to(self.device), target.to(output_dev)
             else:
                 input, target = input.to(self.device), target.to(model.get_output_device())
 
@@ -144,7 +148,6 @@ class IterativeTrainer(object):
                     dump_file = os.path.join(dump_path,filename)
                     self.dump_image(prediction[0].cpu(),dump_file,True)
 
-
             if backward:
                 if stochastic:
                     loss.backward()
@@ -155,17 +158,24 @@ class IterativeTrainer(object):
                         nscaler = nscaler * len(input)
                     loss2 = loss * nscaler
                     loss2.backward()
-
+            
             criterion.size_average = True
             # Compute various measure. Can be safely skipped.
             if not backward or not stochastic:
                 if criterion.size_average:
                     loss.data.mul_(len(input))
-            logger.log('%s_loss'%phase_name, loss.item(), epoch, i)
+            if distrib.is_dist_avail_and_initialized():
+                distrib.do_sum_allreduce(loss) # loss becomes total loss across all processes
+                loss = loss / distrib.get_world_size() # and now the mean of loss
+                if distrib.is_main_process():
+                    logger.log('%s_loss'%phase_name, loss.item(), epoch, i)
             message = '%s Batch loss %.3f'%(phase_name, loss.item())
+
+            acc = None
 
             if classification:
                 pred = []
+                
                 #print("prediction:{}".format(prediction))
                 if prediction.size(1) == 1:
                     # For binary classification, we do this to make the
@@ -174,28 +184,38 @@ class IterativeTrainer(object):
                 else:
                     pred = prediction.max(1)[1]
                 if stochastic and backward:
-                    acc = (pred == target.long()).float().view(-1).mean().item()
-                    logger.log('%s_accuracy'%phase_name, acc, epoch, i)
+                    acc = (pred == target.long()).float().view(-1).mean()
                 else:
-                    acc = (pred == target.long()).float().view(-1).sum().item()
-                    logger.log('%s_accuracy'%phase_name, acc, epoch, i)
+                    acc = (pred == target.long()).float().view(-1).sum()
                     acc = acc/target.numel()
-                message = '%s Accuracy %.2f'%(message, acc)
+                #message = '%s Accuracy %.2f'%(message, acc)
             else:
                 # For regression tasks, use r2 loss
-                acc = r2_loss(prediction,target).cpu()
-                logger.log('%s_accuracy'%phase_name, acc, epoch, i)
+                acc = r2_loss(prediction,target)
+
+            if acc is not None:
+                if distrib.is_dist_avail_and_initialized():
+                    distrib.do_sum_allreduce(acc) # acc becomes total acc across all processes
+                    acc = acc.item() / distrib.get_world_size() # and now the mean of all
+                if distrib.is_main_process():
+                    logger.log('%s_accuracy'%phase_name, acc, epoch, i)
 
             if backward and not stochastic:
                 optimizer.step()
 
-        if not backward or not stochastic:
-            logger.get_measure('%s_loss'%phase_name).measure_normalizer = len(dataset.dataset)
-            if classification:
-                logger.get_measure('%s_accuracy'%phase_name).measure_normalizer = len(dataset.dataset)
+        #if not backward or not stochastic:
+        #    if distrib.is_main_process():
+                #logger.get_measure('%s_loss'%phase_name).measure_normalizer = len(dataset.dataset)
+                #if classification:
+                #    logger.get_measure('%s_accuracy'%phase_name).measure_normalizer = len(dataset.dataset)
+
+        torch.cuda.synchronize()
+        if distrib.is_dist_avail_and_initialized():
+            torch.distributed.barrier()
 
         elapsed = timeit.default_timer() - start_time
         print('  %s Epoch %d in %.2fs' %(phase_name, epoch, elapsed))
+        
 
     def dump_image(self,imageTensor,path,force_grayscale=False):
         image_n = imageTensor.permute(1,2,0)

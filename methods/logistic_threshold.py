@@ -22,6 +22,9 @@ class KWayLogisticWrapper(nn.Module):
         model_output = self.model(x, softmax=False, **kwargs)
         return model_output
     
+    def get_output_device(self):
+        return self.model.get_output_device()
+    
     def preferred_name(self):
         return self.model.__class__.__name__
 

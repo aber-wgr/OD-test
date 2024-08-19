@@ -18,7 +18,7 @@ class ScoreSVMModelWrapper(AbstractModelWrapper):
 
         output_size = base_model.output_size()[1].item()
         self.H = nn.Sequential(
-                    nn.BatchNorm1d(output_size), # Helps with faster convergence.
+                    nn.SyncBatchNorm(output_size), # Helps with faster convergence.
                     nn.Linear(output_size, 1),
         )
 

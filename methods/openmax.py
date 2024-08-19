@@ -93,7 +93,7 @@ class OTModelWrapper(AbstractModelWrapper):
             weib_params[cl] = mr_models[cl].serialize()
 
         self.H = nn.Sequential(
-                    nn.BatchNorm1d(n_classes+1), # Helps with faster convergence.
+                    nn.SyncBatchNorm(n_classes+1), # Helps with faster convergence.
                     nn.Linear(n_classes+1, 1),
         )
         self.H.register_buffer('MAV', mav.clone())

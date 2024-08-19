@@ -41,7 +41,7 @@ class down_shifted_conv2d(nn.Module):
         if norm == 'weight_norm':
             self.conv == wn(self.conv)
         elif norm == 'batch_norm':
-            self.bn = nn.BatchNorm2d(num_filters_out)
+            self.bn = nn.SyncBatchNorm(num_filters_out)
 
         if shift_output_down :
             self.down_shift = lambda x : down_shift(x, pad=nn.ZeroPad2d((0, 0, 1, 0)))
@@ -82,7 +82,7 @@ class down_right_shifted_conv2d(nn.Module):
         if norm == 'weight_norm':
             self.conv == wn(self.conv)
         elif norm == 'batch_norm':
-            self.bn = nn.BatchNorm2d(num_filters_out)
+            self.bn = nn.SyncBatchNorm(num_filters_out)
 
         if shift_output_right :
             self.right_shift = lambda x : right_shift(x, pad=nn.ZeroPad2d((1, 0, 0, 0)))

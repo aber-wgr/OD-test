@@ -2,6 +2,33 @@ import torch
 import torch.distributed as dist
 import os
 
+def is_dist_avail_and_initialized():
+    if not dist.is_available():
+        return False
+    if not dist.is_initialized():
+        return False
+    return True
+
+def get_world_size():
+    if not is_dist_avail_and_initialized():
+        return 1
+    return dist.get_world_size()
+
+def get_rank():
+    if not is_dist_avail_and_initialized():
+        return 0
+    return dist.get_rank()
+
+def do_sum_allreduce(t):
+    dist.all_reduce(t)
+
+def is_main_process():
+    return get_rank() == 0
+
+def save_on_master(*args, **kwargs):
+    if is_main_process():
+        torch.save(*args, **kwargs)
+
 def setup_for_distributed(is_master):
     """
     This function disables printing when not in master process
@@ -11,39 +38,12 @@ def setup_for_distributed(is_master):
 
     def print(*args, **kwargs):
         force = kwargs.pop('force', False)
-        if is_master or force:
-            builtin_print(*args, **kwargs)
+        if is_master:
+            builtin_print(*args, **kwargs,flush=True)
+        elif force:
+            builtin_print(str(get_rank()), *args, **kwargs,flush=True)
 
     __builtin__.print = print
-
-
-def is_dist_avail_and_initialized():
-    if not dist.is_available():
-        return False
-    if not dist.is_initialized():
-        return False
-    return True
-
-
-def get_world_size():
-    if not is_dist_avail_and_initialized():
-        return 1
-    return dist.get_world_size()
-
-
-def get_rank():
-    if not is_dist_avail_and_initialized():
-        return 0
-    return dist.get_rank()
-
-
-def is_main_process():
-    return get_rank() == 0
-
-
-def save_on_master(*args, **kwargs):
-    if is_main_process():
-        torch.save(*args, **kwargs)
 
 
 def init_distributed_mode(args):
@@ -92,7 +92,7 @@ def init_distributed_mode(args):
     torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
                                          world_size=args.world_size, rank=args.rank)
     print("Init done, now calling barrier")
-    torch.distributed.monitored_barrier()
+    torch.distributed.barrier()
     print("Barrier done, moving to setup")
     setup_for_distributed(args.rank == 0)
     print("Completed Distributed Setup")

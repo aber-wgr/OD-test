@@ -5,11 +5,11 @@
 #gpus
 #SBATCH --gres=gpu:4
 #job name
-#SBATCH --job-name=OD-test2
+#SBATCH --job-name=OD-test2-run
 # job stdout file
-#SBATCH --output=odtest2.out.%J
+#SBATCH --output=odtest2-run.out.%J
 # job stderr file
-#SBATCH --error=odtest2.err.%J
+#SBATCH --error=odtest2-run.err.%J
 # maximum job time in D-HH:MM
 #SBATCH --time=2-00:00
 # number of tasks you are requesting
@@ -49,7 +49,7 @@ export NCCL_MIN_CHANNELS=32
 echo "Run Started at:- "
 date
 
-srun singularity exec --nv ~/Containers/Singularity_Pytorch_ODTest2.sif /bin/bash ./sing_setup.sh
+srun singularity exec --nv ~/Containers/Singularity_Pytorch_ODTest2.sif /bin/bash ./sing_run.sh
 
 echo "Run Finished at:- "
 date

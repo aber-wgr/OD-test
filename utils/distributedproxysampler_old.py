@@ -20,8 +20,8 @@ class DistributedProxySampler(DistributedSampler):
         rank (optional): Rank of the current process within num_replicas.
     """
 
-    def __init__(self, sampler, num_replicas=None, rank=None,drop_last=False):        
-        super(DistributedProxySampler, self).__init__(sampler, num_replicas=num_replicas, rank=rank, shuffle=False,drop_last=drop_last)
+    def __init__(self, sampler, num_replicas=None, rank=None):        
+        super(DistributedProxySampler, self).__init__(sampler, num_replicas=num_replicas, rank=rank, shuffle=False)
         self.sampler = sampler
 
     def __iter__(self):
@@ -29,22 +29,10 @@ class DistributedProxySampler(DistributedSampler):
         torch.manual_seed(self.epoch)
         indices = list(self.sampler)
 
-        if not self.drop_last:
-            # add extra samples to make it evenly divisible
-            padding_size = self.total_size - len(indices)
-            if padding_size <= len(indices):
-                indices += indices[:padding_size]
-            else:
-                indices += (indices * math.ceil(padding_size / len(indices)))[:padding_size]
-        else:
-            # remove tail of data to make it evenly divisible.
-            indices = indices[:self.total_size]
-        assert len(indices) == self.total_size
-
         # add extra samples to make it evenly divisible
-        #indices += indices[:(self.total_size - len(indices))]
-        #if len(indices) != self.total_size:
-        #    raise RuntimeError("{} vs {}".format(len(indices), self.total_size))
+        indices += indices[:(self.total_size - len(indices))]
+        if len(indices) != self.total_size:
+            raise RuntimeError("{} vs {}".format(len(indices), self.total_size))
 
         # subsample
         indices = indices[self.rank:self.total_size:self.num_replicas]
@@ -52,9 +40,6 @@ class DistributedProxySampler(DistributedSampler):
             raise RuntimeError("{} vs {}".format(len(indices), self.num_samples))
 
         return iter(indices)
-
-    def __len__(self) -> int:
-        return self.num_samples
         
     def state_dict(self):
         return self.dataset.state_dict()

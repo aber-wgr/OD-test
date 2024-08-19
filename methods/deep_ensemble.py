@@ -29,6 +29,9 @@ class DeepEnsembleWrapper(nn.Module):
                 x.grad.zero_()
         model_output = self.model(x, **kwargs)
         return model_output
+    
+    def get_output_device(self):
+        return self.model.get_output_device()
 
     def preferred_name(self):
         return self.model.__class__.__name__
@@ -96,6 +99,10 @@ class DeepEnsembleMasterWrapper(nn.Module):
             return output.log() # take the log for consistency with other models after averaging.
         else:
             return output
+        
+    def get_output_device(self):
+        return self.subwrappers[-1].get_output_device()
+        
     def preferred_name(self):
         return self.subwrappers[0].preferred_name()
 

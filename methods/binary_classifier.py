@@ -22,7 +22,7 @@ class BinaryModelWrapper(nn.Module):
         self.base_model = base_model
         output_size = base_model.output_size()[1].item()
         self.H = nn.Sequential(
-                    nn.BatchNorm1d(output_size),
+                    nn.SyncBatchNorm(output_size),
                     nn.Linear(output_size, 1),
         )
 

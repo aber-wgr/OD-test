@@ -16,11 +16,10 @@ import categories.pixelcnn_setup as PCNNSetup
 
 import utils.distributed as distrib 
 import torch
-import wandb
 from utils.distributedproxysampler import DistributedProxySampler
 
-if args.exp != 'model_ref':
-    print('The exp is NOT model_ref!')
+#if args.exp != 'model_ref':
+#    print('The exp is NOT model_ref!')
 
 def needs_processing(args, dataset_class, models, suffix):
     """
@@ -37,10 +36,9 @@ def needs_processing(args, dataset_class, models, suffix):
 if __name__ == "__main__":
 
     distrib.init_distributed_mode(args)
-    print("Distributed init completed")
 
-    if (distrib.is_main_process() and not args.no_wandb):
-        wandb.init(project=args.wandb_project, entity="aber-wgr")
+#    if (distrib.is_main_process() and not args.no_wandb):
+#        wandb.init(project=args.wandb_project, entity="aber-wgr")
 
     # Set the seed for reproducibility.
     seed = args.seed + distrib.get_rank()
@@ -54,8 +52,10 @@ if __name__ == "__main__":
     Global.modelStore.generate(args)
     Global.methodStore.generate(args)
 
-    if (distrib.is_main_process()  and not args.no_wandb):
-        wandb.config.update(args)
+#    if (distrib.is_main_process()  and not args.no_wandb):
+#        wandb.config.update(args)
+
+    
 
     task_list = [
         # The list of models,   The function that does the training,    Can I skip-test?,   suffix of the operation.
@@ -63,15 +63,16 @@ if __name__ == "__main__":
         # whether we have done them before without instantiating the network architecture or dataset.
         # saves quite a lot of time when possible.
         (Global.modelStore.dataset_reference_classifiers, CLSetup.train_classifier,            True, ['base']),
-        #(Global.modelStore.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
-        #(Global.modelStore.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
-        #(Global.modelStore.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
-        #(Global.modelStore.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
+        (Global.modelStore.dataset_reference_classifiers, KLogisticSetup.train_classifier,     True, ['KLogistic']),
+        (Global.modelStore.dataset_reference_classifiers, DeepEnsembleSetup.train_classifier,  True, ['DE.%d'%i for i in range(5)]),
+        (Global.modelStore.dataset_reference_autoencoders, AESetup.train_BCE_AE,               False, []),
+        (Global.modelStore.dataset_reference_autoencoders, AESetup.train_MSE_AE,               False, []),
         #(Global.modelStore.dataset_reference_waes, AESetup.train_BCE_WAE,                      False, []),
         #(Global.modelStore.dataset_reference_waes, AESetup.train_MSE_WAE,                      False, []),
-        #(Global.modelStore.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
+        (Global.modelStore.dataset_reference_vaes, AESetup.train_variational_autoencoder,      False, []),
         #(Global.modelStore.dataset_reference_pcnns, PCNNSetup.train_pixelcnn,                  False, []),
     ]
+
 
     # Do a for loop to run the training tasks.
     for task_id, (ref_list, train_func, skippable, suffix) in enumerate(task_list):
